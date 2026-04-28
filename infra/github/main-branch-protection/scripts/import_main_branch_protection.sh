@@ -34,7 +34,8 @@ for repo in "${repos[@]}"; do
     continue
   fi
 
-  if grep -q "Cannot import non-existent remote object" "${IMPORT_LOG_PATH}"; then
+  if grep -q "Cannot import non-existent remote object" "${IMPORT_LOG_PATH}" \
+    || grep -q "could not find a branch protection rule with the pattern 'main'" "${IMPORT_LOG_PATH}"; then
     echo "No existing branch protection for ${import_id}; Terraform will create it."
     continue
   fi
