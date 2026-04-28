@@ -127,9 +127,13 @@
       "name": "bijux-genomics",
       "class": "rust",
       "stack": "rust",
+      "notes": [
+        "Temporarily excluded from live branch-protection apply while the repository remains private.",
+        "Enable branch protection from bijux-iac when the public release path is opened."
+      ],
       "governance": {
         "branch_protection": {
-          "enabled": true,
+          "enabled": false,
           "required_approving_review_count": 1,
           "enforce_admins": false
         }
