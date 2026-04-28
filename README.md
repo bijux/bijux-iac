@@ -1,34 +1,38 @@
 # bijux-iac
 
-GitHub infrastructure-as-code governance for Bijux repositories.
+This repo is where we govern Bijux GitHub settings from one place.
 
 Workspace policy baseline: [`/Users/bijan/bijux/README.md`](/Users/bijan/bijux/README.md)
 
-`bijux-iac` owns live GitHub control-plane settings that are enforced through
-the GitHub API, starting with `main` branch protection. `bijux-std` remains the
-source of truth for repository-local standards content such as managed workflow
-files, templates, scripts, and sync checks.
+Right now the live surface starts with `main` branch protection. More GitHub
+admin surfaces should come here over time instead of being scattered inside the
+other repos.
 
-## Responsibility split
+`bijux-iac` and `bijux-std` are close, but they are not the same job.
 
-- `bijux-iac`: live GitHub settings, rules, and repo governance applied through
-  Terraform.
-- `bijux-std`: synchronized in-repo standards content and validation.
+- `bijux-iac` is for live GitHub control-plane settings applied through the
+  GitHub API with Terraform.
+- `bijux-std` is for repository-local standards content that gets synced into
+  repos and checked in CI.
 
-`bijux-iac` governs `bijux-std`, and `bijux-std` may still be consumed as a
-standards source inside `bijux-iac`.
+So the split is simple:
 
-## Current managed surface
+- if it is a live repo/org setting, it belongs here
+- if it is synced files inside repos, it belongs in `bijux-std`
 
-- GitHub `main` branch protection for public Bijux repositories that are
-  marked `enabled` in [`inventory/repositories.json`](inventory/repositories.json)
-- `bijux-genomics` is intentionally excluded while it remains private; enable it
-  from `bijux-iac` when the public release path is opened
+`bijux-iac` governs `bijux-std`, and `bijux-std` can still be consumed here as
+shared standards content.
 
-Future GitHub governance surfaces should be added here rather than embedded in
-consumer repositories.
+## What we manage here now
 
-## Local verification
+- `main` branch protection for the public Bijux repos listed in
+  [`inventory/repositories.json`](inventory/repositories.json)
+
+`bijux-genomics` is excluded on purpose for now because it is still private.
+When that repo is ready for a public release path, we turn it on here and let
+it follow the same control plane.
+
+## Local checks
 
 ```bash
 python3 scripts/validate_repo_inventory.py
@@ -40,7 +44,7 @@ terraform -chdir=infra/github/main-branch-protection validate
 
 ## Required secret
 
-Set repository secret on `bijux-iac`:
+Set this secret on `bijux-iac`:
 
-- `GH_ADMIN_TOKEN`: token with repository administration permission for managed
-  Bijux repositories
+- `GH_ADMIN_TOKEN`: token with repository administration permission for the
+  managed Bijux repositories
