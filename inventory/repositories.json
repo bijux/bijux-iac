@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "classes": {
+    "foundation": {
+      "description": "Control-plane repositories for governance and shared standards."
+    },
+    "web-course": {
+      "description": "Website and course delivery repositories."
+    },
+    "python": {
+      "description": "Python-first product repositories."
+    },
+    "rust": {
+      "description": "Rust-first product repositories."
+    }
+  },
+  "repositories": [
+    {
+      "name": "bijux-iac",
+      "class": "foundation",
+      "stack": "terraform",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-std",
+      "class": "foundation",
+      "stack": "python",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux.github.io",
+      "class": "web-course",
+      "stack": "docs",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-masterclass",
+      "class": "web-course",
+      "stack": "docs",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-canon",
+      "class": "python",
+      "stack": "python",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-proteomics",
+      "class": "python",
+      "stack": "python",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-pollenomics",
+      "class": "python",
+      "stack": "python",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-core",
+      "class": "rust",
+      "stack": "rust",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-atlas",
+      "class": "rust",
+      "stack": "rust",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-genomics",
+      "class": "rust",
+      "stack": "rust",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    },
+    {
+      "name": "bijux-telecom",
+      "class": "rust",
+      "stack": "rust",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "required_approving_review_count": 1,
+          "enforce_admins": false
+        }
+      }
+    }
+  ]
+}

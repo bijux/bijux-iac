@@ -1,0 +1,52 @@
+name: github-governance-apply
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-governance-apply-main
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+
+      - name: Validate repository inventory
+        run: python3 scripts/validate_repo_inventory.py
+
+      - name: Check rendered branch protection targets
+        run: python3 scripts/render_main_branch_protection_tfvars.py --check
+
+      - name: Terraform init
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
+        working-directory: infra/github/main-branch-protection
+        run: terraform init
+
+      - name: Import current branch protection state
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
+        working-directory: infra/github/main-branch-protection
+        run: ./scripts/import_main_branch_protection.sh
+
+      - name: Terraform apply
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
+        working-directory: infra/github/main-branch-protection
+        run: terraform apply -input=false -auto-approve
