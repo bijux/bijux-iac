@@ -17,7 +17,7 @@ def render_payload() -> dict:
 
     protected: list[str] = []
     review_counts: set[int] = set()
-    enforce_admins_values: set[bool] = set()
+    enforce_admins_repositories: list[str] = []
 
     for repo in repositories:
         branch = repo["governance"]["branch_protection"]
@@ -25,21 +25,17 @@ def render_payload() -> dict:
             continue
         protected.append(repo["name"])
         review_counts.add(branch["required_approving_review_count"])
-        enforce_admins_values.add(branch["enforce_admins"])
+        if branch["enforce_admins"]:
+            enforce_admins_repositories.append(repo["name"])
 
     if len(review_counts) != 1:
         raise SystemExit(
             f"branch protection review count must be uniform for current Terraform shape: {sorted(review_counts)}"
         )
-    if len(enforce_admins_values) != 1:
-        raise SystemExit(
-            "branch protection enforce_admins must be uniform for current Terraform shape"
-        )
-
     return {
         "protected_repositories": sorted(protected),
         "required_approving_review_count": review_counts.pop(),
-        "enforce_admins": enforce_admins_values.pop(),
+        "enforce_admins_repositories": sorted(enforce_admins_repositories),
     }
 
 

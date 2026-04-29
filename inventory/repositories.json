@@ -23,7 +23,7 @@
         "branch_protection": {
           "enabled": true,
           "required_approving_review_count": 1,
-          "enforce_admins": false
+          "enforce_admins": true
         }
       }
     },
@@ -35,7 +35,7 @@
         "branch_protection": {
           "enabled": true,
           "required_approving_review_count": 1,
-          "enforce_admins": false
+          "enforce_admins": true
         }
       }
     },
@@ -47,7 +47,7 @@
         "branch_protection": {
           "enabled": true,
           "required_approving_review_count": 1,
-          "enforce_admins": false
+          "enforce_admins": true
         }
       }
     },
@@ -59,7 +59,7 @@
         "branch_protection": {
           "enabled": true,
           "required_approving_review_count": 1,
-          "enforce_admins": false
+          "enforce_admins": true
         }
       }
     },

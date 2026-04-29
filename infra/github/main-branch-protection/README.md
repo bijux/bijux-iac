@@ -13,10 +13,17 @@ Repository targets are rendered from
 
 - pull request required
 - one approving review required
-- admin bypass enabled for repository admins
+- admin bypass disabled for repositories listed in `enforce_admins_repositories`
 - force push disabled
 - branch deletion disabled
 - conversation resolution required
+
+Current admin-enforced repositories:
+
+- `bijux-iac`
+- `bijux-std`
+- `bijux.github.io`
+- `bijux-masterclass`
 
 ## CI flow
 
