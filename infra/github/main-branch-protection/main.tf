@@ -10,7 +10,7 @@ resource "github_branch_protection" "main" {
   repository_id = data.github_repository.managed[each.value].node_id
   pattern       = "main"
 
-  enforce_admins                  = var.enforce_admins
+  enforce_admins                  = contains(var.enforce_admins_repositories, each.value)
   allows_force_pushes             = false
   allows_deletions                = false
   require_conversation_resolution = true

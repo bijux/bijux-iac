@@ -21,8 +21,8 @@ variable "required_approving_review_count" {
   default     = 1
 }
 
-variable "enforce_admins" {
-  description = "Whether branch protection is enforced for repository admins"
-  type        = bool
-  default     = false
+variable "enforce_admins_repositories" {
+  description = "Repository names whose main branch protection also applies to repository admins"
+  type        = set(string)
+  default     = []
 }
