@@ -2,8 +2,6 @@
 
 This repo is where we govern Bijux GitHub settings from one place.
 
-
-
 `bijux-iac` owns the live GitHub control plane for the Bijux repository
 family. The repo stays narrow on purpose: GitHub settings live here, while
 repo-local shared content stays in `bijux-std`.
