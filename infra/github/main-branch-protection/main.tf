@@ -47,11 +47,11 @@ resource "github_repository_ruleset" "main" {
     non_fast_forward = true
 
     pull_request {
-      allowed_merge_methods          = ["merge"]
-      dismiss_stale_reviews_on_push  = true
-      require_code_owner_review      = false
-      require_last_push_approval     = false
-      required_approving_review_count = var.ruleset_required_approving_review_count
+      allowed_merge_methods             = ["merge"]
+      dismiss_stale_reviews_on_push     = true
+      require_code_owner_review         = false
+      require_last_push_approval        = false
+      required_approving_review_count   = var.ruleset_required_approving_review_count
       required_review_thread_resolution = true
     }
 
