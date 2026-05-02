@@ -10,19 +10,37 @@ variable "github_token" {
   sensitive   = true
 }
 
-variable "protected_repositories" {
-  description = "Repository names that must enforce PR-only main branch policy"
+variable "legacy_branch_protection_repositories" {
+  description = "Repository names that continue to use legacy branch protection"
   type        = set(string)
 }
 
-variable "required_approving_review_count" {
-  description = "Number of approving reviews required before merge"
+variable "legacy_required_approving_review_count" {
+  description = "Number of approving reviews required before merge for legacy branch protection"
   type        = number
   default     = 1
 }
 
-variable "enforce_admins_repositories" {
-  description = "Repository names whose main branch protection also applies to repository admins"
+variable "legacy_enforce_admins_repositories" {
+  description = "Repository names whose legacy branch protection also applies to repository admins"
   type        = set(string)
   default     = []
+}
+
+variable "ruleset_repositories" {
+  description = "Repository names that must enforce main-branch policy with repository rulesets"
+  type        = set(string)
+  default     = []
+}
+
+variable "ruleset_required_approving_review_count" {
+  description = "Number of approving reviews required before merge for ruleset-managed repositories"
+  type        = number
+  default     = 0
+}
+
+variable "ruleset_required_status_checks" {
+  description = "Required status check contexts for each ruleset-managed repository"
+  type        = map(list(string))
+  default     = {}
 }

@@ -20,6 +20,11 @@
     {
       "type": "pull_request",
       "parameters": {
+        "allowed_merge_methods": [
+          "merge",
+          "squash",
+          "rebase"
+        ],
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
         "require_last_push_approval": false,
@@ -33,6 +38,12 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
+            "context": "policy / github"
+          },
+          {
+            "context": "policy / pr approval"
+          },
+          {
             "context": "std / standard"
           },
           {
@@ -40,9 +51,6 @@
           }
         ]
       }
-    },
-    {
-      "type": "merge_queue"
     }
   ]
 }
