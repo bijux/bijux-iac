@@ -158,10 +158,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "engine": "branch_protection",
-          "required_approving_review_count": 1,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
           "enforce_admins": false,
-          "required_status_checks": []
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -172,10 +177,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "engine": "branch_protection",
-          "required_approving_review_count": 1,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
           "enforce_admins": false,
-          "required_status_checks": []
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -183,17 +193,18 @@
       "name": "bijux-phylogenetics",
       "class": "python",
       "stack": "python",
-      "notes": [
-        "Temporarily excluded from live ruleset apply while the repository remains private.",
-        "Enable governance from bijux-iac when the public release path is opened."
-      ],
       "governance": {
         "branch_protection": {
-          "enabled": false,
+          "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
           "enforce_admins": false,
-          "required_status_checks": []
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -222,10 +233,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "engine": "branch_protection",
-          "required_approving_review_count": 1,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
           "enforce_admins": false,
-          "required_status_checks": []
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     }

@@ -11,12 +11,7 @@ Repository targets are rendered from
 
 ## Main branch policy
 
-Two enforcement engines are supported during the rollout:
-
-- `branch_protection`: legacy protection for repositories that still use direct GitHub branch protection.
-- `ruleset`: repository rulesets with explicit required status checks and approval policy gates.
-
-Ruleset-managed repositories use this baseline:
+Public managed repositories use repository rulesets with this baseline:
 
 - pull request required
 - zero built-in approving reviews
@@ -26,7 +21,7 @@ Ruleset-managed repositories use this baseline:
 - branch deletion disabled
 - conversation resolution required
 
-Legacy branch-protection repositories keep the older direct review-count enforcement until they are migrated.
+The inventory can still express `branch_protection` for compatibility, but the current target state is ruleset-only governance for every public repository. `bijux-genomics` remains excluded from live ruleset apply while it stays private.
 
 ## CI flow
 
