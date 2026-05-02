@@ -22,8 +22,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": true
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -34,8 +41,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": true
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -46,8 +60,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": true
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -58,8 +79,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": true
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -70,8 +98,16 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "verification-ready"
+          ]
         }
       }
     },
@@ -82,8 +118,16 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "verification-ready"
+          ]
         }
       }
     },
@@ -94,8 +138,16 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "verification-ready"
+          ]
         }
       }
     },
@@ -106,8 +158,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -118,8 +177,34 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-phylogenetics",
+      "class": "python",
+      "stack": "python",
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -128,14 +213,16 @@
       "class": "rust",
       "stack": "rust",
       "notes": [
-        "Temporarily excluded from live branch-protection apply while the repository remains private.",
-        "Enable branch protection from bijux-iac when the public release path is opened."
+        "Temporarily excluded from live ruleset apply while the repository remains private.",
+        "Enable governance from bijux-iac when the public release path is opened."
       ],
       "governance": {
         "branch_protection": {
           "enabled": false,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": []
         }
       }
     },
@@ -146,8 +233,15 @@
       "governance": {
         "branch_protection": {
           "enabled": true,
-          "required_approving_review_count": 1,
-          "enforce_admins": false
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     }

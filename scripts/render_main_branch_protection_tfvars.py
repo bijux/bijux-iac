@@ -15,27 +15,52 @@ def render_payload() -> dict:
     inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
     repositories = inventory.get("repositories", [])
 
-    protected: list[str] = []
-    review_counts: set[int] = set()
-    enforce_admins_repositories: list[str] = []
+    legacy_protected: list[str] = []
+    legacy_review_counts: set[int] = set()
+    legacy_enforce_admins_repositories: list[str] = []
+    ruleset_repositories: list[str] = []
+    ruleset_review_counts: set[int] = set()
+    ruleset_required_status_checks: dict[str, list[str]] = {}
 
     for repo in repositories:
         branch = repo["governance"]["branch_protection"]
         if not branch["enabled"]:
             continue
-        protected.append(repo["name"])
-        review_counts.add(branch["required_approving_review_count"])
-        if branch["enforce_admins"]:
-            enforce_admins_repositories.append(repo["name"])
+        if branch["engine"] == "branch_protection":
+            legacy_protected.append(repo["name"])
+            legacy_review_counts.add(branch["required_approving_review_count"])
+            if branch["enforce_admins"]:
+                legacy_enforce_admins_repositories.append(repo["name"])
+            continue
 
-    if len(review_counts) != 1:
+        ruleset_repositories.append(repo["name"])
+        ruleset_review_counts.add(branch["required_approving_review_count"])
+        ruleset_required_status_checks[repo["name"]] = branch["required_status_checks"]
+
+    if len(legacy_review_counts) > 1:
         raise SystemExit(
-            f"branch protection review count must be uniform for current Terraform shape: {sorted(review_counts)}"
+            "legacy branch protection review count must be uniform for current Terraform shape: "
+            f"{sorted(legacy_review_counts)}"
+        )
+    if len(ruleset_review_counts) > 1:
+        raise SystemExit(
+            "ruleset review count must be uniform for current Terraform shape: "
+            f"{sorted(ruleset_review_counts)}"
         )
     return {
-        "protected_repositories": sorted(protected),
-        "required_approving_review_count": review_counts.pop(),
-        "enforce_admins_repositories": sorted(enforce_admins_repositories),
+        "legacy_branch_protection_repositories": sorted(legacy_protected),
+        "legacy_required_approving_review_count": (
+            legacy_review_counts.pop() if legacy_review_counts else 1
+        ),
+        "legacy_enforce_admins_repositories": sorted(legacy_enforce_admins_repositories),
+        "ruleset_repositories": sorted(ruleset_repositories),
+        "ruleset_required_approving_review_count": (
+            ruleset_review_counts.pop() if ruleset_review_counts else 0
+        ),
+        "ruleset_required_status_checks": {
+            repo: ruleset_required_status_checks[repo]
+            for repo in sorted(ruleset_required_status_checks)
+        },
     }
 
 

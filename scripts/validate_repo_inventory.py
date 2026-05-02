@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "inventory/repositories.json"
 ALLOWED_CLASSES = {"foundation", "web-course", "python", "rust"}
+ALLOWED_ENGINES = {"branch_protection", "ruleset"}
 
 
 def main() -> None:
@@ -54,12 +55,32 @@ def main() -> None:
             raise SystemExit(f"{name}: missing branch_protection object")
         if not isinstance(branch.get("enabled"), bool):
             raise SystemExit(f"{name}: branch_protection.enabled must be bool")
+        if branch.get("engine") not in ALLOWED_ENGINES:
+            raise SystemExit(
+                f"{name}: branch_protection.engine must be one of {sorted(ALLOWED_ENGINES)}"
+            )
         if not isinstance(branch.get("required_approving_review_count"), int):
             raise SystemExit(
                 f"{name}: branch_protection.required_approving_review_count must be int"
             )
         if not isinstance(branch.get("enforce_admins"), bool):
             raise SystemExit(f"{name}: branch_protection.enforce_admins must be bool")
+        required_status_checks = branch.get("required_status_checks")
+        if not isinstance(required_status_checks, list):
+            raise SystemExit(f"{name}: branch_protection.required_status_checks must be list")
+        if not all(isinstance(item, str) and item for item in required_status_checks):
+            raise SystemExit(
+                f"{name}: branch_protection.required_status_checks entries must be non-empty strings"
+            )
+        if branch["engine"] == "ruleset" and branch["enabled"]:
+            if branch["required_approving_review_count"] != 0:
+                raise SystemExit(
+                    f"{name}: ruleset-managed repositories must use required_approving_review_count=0"
+                )
+            if not required_status_checks:
+                raise SystemExit(
+                    f"{name}: ruleset-managed repositories must declare required status checks"
+                )
 
     print(f"inventory: OK ({len(repositories)} repositories)")
 

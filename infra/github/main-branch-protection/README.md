@@ -1,6 +1,6 @@
-# GitHub Main Branch Protection Governance
+# GitHub Main Branch Governance
 
-Terraform source for PR-only protection on repositories managed by `bijux-iac`.
+Terraform source for PR-only governance on repositories managed by `bijux-iac`.
 
 ## Managed repositories
 
@@ -11,26 +11,24 @@ Repository targets are rendered from
 
 ## Main branch policy
 
+Public managed repositories use repository rulesets with this baseline:
+
 - pull request required
-- one approving review required
-- admin bypass disabled for repositories listed in `enforce_admins_repositories`
+- zero built-in approving reviews
+- required checks: `policy / github`, `policy / pr approval`, `std / standard`, `std / report`
+- repository-specific required checks may be added on top of the baseline
 - force push disabled
 - branch deletion disabled
 - conversation resolution required
 
-Current admin-enforced repositories:
-
-- `bijux-iac`
-- `bijux-std`
-- `bijux.github.io`
-- `bijux-masterclass`
+The inventory can still express `branch_protection` for compatibility, but the current target state is ruleset-only governance for every public repository. `bijux-genomics` remains excluded from live ruleset apply while it stays private.
 
 ## CI flow
 
 - `.github/workflows/github-governance-plan.yml` on pull requests
 - `.github/workflows/github-governance-apply.yml` on `main` and manual dispatch
 
-CI imports current branch protection resources before plan/apply so governance can run without a separate persistent Terraform backend. The import script reads the same repository list as Terraform to avoid configuration drift.
+CI imports current legacy branch protection resources and repository rulesets before plan/apply so governance can run without a separate persistent Terraform backend. The import script reads the same repository list as Terraform to avoid configuration drift.
 
 ## Required secret
 
