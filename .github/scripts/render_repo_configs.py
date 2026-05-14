@@ -191,6 +191,65 @@ def remove_if_generated(path: Path) -> None:
         path.unlink()
 
 
+def inject_policy_gate(
+    wrapper_name: str,
+    wrapper_definition: dict[str, Any],
+) -> dict[str, Any]:
+    if wrapper_name != "verify":
+        return wrapper_definition
+
+    jobs = wrapper_definition.get("jobs")
+    if not isinstance(jobs, dict) or "policy_gate" in jobs:
+        return wrapper_definition
+
+    permissions = wrapper_definition.setdefault("permissions", {})
+    if isinstance(permissions, dict):
+        permissions.setdefault("actions", "read")
+        permissions.setdefault("pull-requests", "read")
+
+    policy_gate_job = {
+        "name": "policy-prerequisites",
+        "runs-on": "ubuntu-latest",
+        "steps": [
+            {
+                "uses": "actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8",
+            },
+            {
+                "name": "Wait for policy and standards prerequisites",
+                "shell": "bash",
+                "env": {
+                    "GITHUB_TOKEN": "${{ github.token }}",
+                },
+                "run": (
+                    "set -euo pipefail\n"
+                    "python3 .github/scripts/check_workflow_prerequisites.py"
+                ),
+            },
+        ],
+    }
+
+    updated_jobs: dict[str, Any] = {"policy_gate": policy_gate_job}
+    for job_name, job_definition in jobs.items():
+        if not isinstance(job_definition, dict):
+            updated_jobs[job_name] = job_definition
+            continue
+
+        existing_needs = job_definition.get("needs")
+        if existing_needs is None:
+            job_definition["needs"] = "policy_gate"
+        elif isinstance(existing_needs, str):
+            if existing_needs != "policy_gate":
+                job_definition["needs"] = ["policy_gate", existing_needs]
+        elif isinstance(existing_needs, list):
+            if "policy_gate" not in existing_needs:
+                job_definition["needs"] = ["policy_gate", *existing_needs]
+
+        updated_jobs[job_name] = job_definition
+
+    wrapper_definition["jobs"] = updated_jobs
+    return wrapper_definition
+
+
 def render_repo(repo_name: str, manifest: dict) -> None:
     repo = find_repo_config(manifest, repo_name)
     repo_root = resolve_repo_root(repo_name)
@@ -229,6 +288,7 @@ def render_repo(repo_name: str, manifest: dict) -> None:
         if wrapper_definition is None:
             remove_if_generated(wrapper_path)
             continue
+        wrapper_definition = inject_policy_gate(wrapper_name, wrapper_definition)
         write_if_needed(wrapper_path, render_yaml_document(wrapper_definition))
 
 

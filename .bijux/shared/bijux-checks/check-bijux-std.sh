@@ -219,6 +219,28 @@ verify_homepage_sidebar_collapse_contract() {
   echo "✔ Homepage scoped-nav-empty sidebar collapse contract is enforced"
 }
 
+verify_workflow_run_shell_preambles() {
+  local manifest_shell_breaks
+  manifest_shell_breaks="$(grep -nE '"run": "set -euo pipefail [^;&"]' "${repo_root}/.github/standards/repo-config.manifest.json" || true)"
+  if [[ -n "${manifest_shell_breaks}" ]]; then
+    echo "ERROR: malformed workflow shell preamble in standards manifest" >&2
+    echo "${manifest_shell_breaks}" >&2
+    echo 'Hint: use `set -euo pipefail; ...` or `set -euo pipefail && ...`, not `set -euo pipefail command ...`.' >&2
+    exit 1
+  fi
+
+  local shared_workflow_breaks
+  shared_workflow_breaks="$(grep -RInE 'run: "?set -euo pipefail [^;&"]' "${repo_root}/shared/bijux-gh/workflows" || true)"
+  if [[ -n "${shared_workflow_breaks}" ]]; then
+    echo "ERROR: malformed workflow shell preamble in shared GitHub workflow templates" >&2
+    echo "${shared_workflow_breaks}" >&2
+    echo 'Hint: use `set -euo pipefail; ...` or `set -euo pipefail && ...`, not `set -euo pipefail command ...`.' >&2
+    exit 1
+  fi
+
+  echo "✔ Workflow shell preambles are executable"
+}
+
 tmp_dir="$(mktemp -d)"
 tmp_manifest="${tmp_dir}/manifest.txt"
 cleanup() {
@@ -256,5 +278,6 @@ done < <(read_directories)
 verify_no_legacy_root_shared_dirs
 verify_canonical_mermaid_init
 verify_homepage_sidebar_collapse_contract
+verify_workflow_run_shell_preambles
 
 echo "✔ bijux-std check passed (ref=${std_ref}, manifest=${manifest_rel}, remote=${git_url_default})"
