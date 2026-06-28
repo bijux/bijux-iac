@@ -9,6 +9,47 @@ ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "inventory/repositories.json"
 ALLOWED_CLASSES = {"foundation", "web-course", "python", "rust"}
 ALLOWED_ENGINES = {"branch_protection", "ruleset"}
+ALLOWED_VISIBILITIES = {"public", "private"}
+REPOSITORY_SETTING_TYPES = {
+    "visibility": str,
+    "has_issues": bool,
+    "has_wiki": bool,
+    "allow_merge_commit": bool,
+    "allow_squash_merge": bool,
+    "allow_rebase_merge": bool,
+    "delete_branch_on_merge": bool,
+    "allow_auto_merge": bool,
+    "web_commit_signoff_required": bool,
+}
+
+
+def validate_repository_settings(
+    owner: str,
+    settings: object,
+    *,
+    require_all_keys: bool,
+) -> None:
+    if not isinstance(settings, dict):
+        raise SystemExit(f"{owner}: repository settings must be an object")
+    unknown_keys = set(settings) - set(REPOSITORY_SETTING_TYPES)
+    if unknown_keys:
+        raise SystemExit(f"{owner}: unknown repository settings keys: {sorted(unknown_keys)}")
+    if require_all_keys:
+        missing_keys = set(REPOSITORY_SETTING_TYPES) - set(settings)
+        if missing_keys:
+            raise SystemExit(
+                f"{owner}: repository settings defaults missing keys: {sorted(missing_keys)}"
+            )
+    for key, expected_type in REPOSITORY_SETTING_TYPES.items():
+        if key not in settings:
+            continue
+        value = settings[key]
+        if not isinstance(value, expected_type):
+            raise SystemExit(f"{owner}: repository settings {key} must be {expected_type.__name__}")
+        if key == "visibility" and value not in ALLOWED_VISIBILITIES:
+            raise SystemExit(
+                f"{owner}: repository settings visibility must be one of {sorted(ALLOWED_VISIBILITIES)}"
+            )
 
 
 def main() -> None:
@@ -27,6 +68,13 @@ def main() -> None:
     if missing_defined:
         raise SystemExit(f"missing class definitions: {sorted(missing_defined)}")
 
+    repository_settings_defaults = inventory.get("repository_settings_defaults")
+    validate_repository_settings(
+        "inventory",
+        repository_settings_defaults,
+        require_all_keys=True,
+    )
+
     repositories = inventory.get("repositories")
     if not isinstance(repositories, list) or not repositories:
         raise SystemExit("inventory repositories must be a non-empty list")
@@ -38,6 +86,7 @@ def main() -> None:
         name = repo.get("name")
         repo_class = repo.get("class")
         stack = repo.get("stack")
+        settings = repo.get("settings", {})
         governance = repo.get("governance")
         if not isinstance(name, str) or not name.startswith("bijux"):
             raise SystemExit(f"invalid repository name: {name!r}")
@@ -48,6 +97,7 @@ def main() -> None:
             raise SystemExit(f"{name}: invalid class {repo_class!r}")
         if not isinstance(stack, str) or not stack:
             raise SystemExit(f"{name}: missing stack")
+        validate_repository_settings(name, settings, require_all_keys=False)
         if not isinstance(governance, dict):
             raise SystemExit(f"{name}: missing governance object")
         branch = governance.get("branch_protection")
