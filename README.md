@@ -57,10 +57,8 @@ consumer repos.
 
 - `main` branch protection for the public Bijux repos listed in
   [`inventory/repositories.json`](inventory/repositories.json)
-
-`bijux-genomics` is excluded on purpose for now because it is still private.
-When that repo is ready for a public release path, it should move under the
-same control plane here.
+- live repository settings for the same public Bijux repo inventory, including
+  visibility and merge-policy surfaces
 
 ## Relationship to bijux-std
 
@@ -85,6 +83,12 @@ python3 scripts/validate_repo_inventory.py
 
 ```bash
 python3 scripts/render_main_branch_protection_tfvars.py --check
+```
+
+### Audit live GitHub governance against inventory
+
+```bash
+python3 scripts/audit_live_repository_governance.py
 ```
 
 ### Validate the managed Terraform surface

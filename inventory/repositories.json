@@ -14,6 +14,17 @@
       "description": "Rust-first product repositories."
     }
   },
+  "repository_settings_defaults": {
+    "visibility": "public",
+    "has_issues": true,
+    "has_wiki": true,
+    "allow_merge_commit": true,
+    "allow_squash_merge": false,
+    "allow_rebase_merge": false,
+    "delete_branch_on_merge": false,
+    "allow_auto_merge": false,
+    "web_commit_signoff_required": false
+  },
   "repositories": [
     {
       "name": "bijux-iac",
@@ -155,6 +166,9 @@
       "name": "bijux-core",
       "class": "rust",
       "stack": "rust",
+      "settings": {
+        "has_wiki": false
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -193,6 +207,9 @@
       "name": "bijux-phylogenetics",
       "class": "python",
       "stack": "python",
+      "settings": {
+        "has_wiki": false
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -212,17 +229,21 @@
       "name": "bijux-genomics",
       "class": "rust",
       "stack": "rust",
-      "notes": [
-        "Temporarily excluded from live ruleset apply while the repository remains private.",
-        "Enable governance from bijux-iac when the public release path is opened."
-      ],
+      "settings": {
+        "has_wiki": false
+      },
       "governance": {
         "branch_protection": {
-          "enabled": false,
+          "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
           "enforce_admins": false,
-          "required_status_checks": []
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
         }
       }
     },
@@ -230,6 +251,9 @@
       "name": "bijux-telecom",
       "class": "rust",
       "stack": "rust",
+      "settings": {
+        "has_wiki": false
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,

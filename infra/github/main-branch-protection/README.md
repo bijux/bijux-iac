@@ -21,7 +21,7 @@ Public managed repositories use repository rulesets with this baseline:
 - branch deletion disabled
 - conversation resolution required
 
-The inventory can still express `branch_protection` for compatibility, but the current target state is ruleset-only governance for every public repository. `bijux-genomics` remains excluded from live ruleset apply while it stays private.
+The inventory can still express `branch_protection` for compatibility, but the current target state is ruleset-only governance for every public repository.
 
 ## CI flow
 
@@ -34,4 +34,4 @@ CI imports current legacy branch protection resources and repository rulesets be
 
 Set repository secret on `bijux-iac`:
 
-- `GH_ADMIN_TOKEN`: token with repository administration permission for both managed repositories.
+- `GH_ADMIN_TOKEN`: token with repository administration permission for the managed Bijux repositories.
