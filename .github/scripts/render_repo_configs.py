@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,14 @@ PROVENANCE_HEADER = (
     "# Source of truth: bijux-std/.github/standards/repo-config.manifest.json and "
     "bijux-std/shared/bijux-gh/workflows/.\n"
     "# Do not edit this generated copy directly.\n\n"
+)
+REQUIRED_VERIFY_TRIGGER_PATHS = [
+    ".bijux/**",
+    ".github/**",
+]
+DEPENDABOT_PR_SKIP_CONDITION = (
+    "github.event_name != 'pull_request' || "
+    "github.event.pull_request.user.login != 'dependabot[bot]'"
 )
 
 
@@ -105,7 +114,7 @@ def render_release_env(entries: list[dict]) -> str:
         elif kind == "json":
             rendered = "'" + json.dumps(value, separators=(",", ":")) + "'"
         elif kind == "string":
-            rendered = str(value)
+            rendered = shlex.quote(str(value))
         else:
             raise ValueError(f"Unsupported release.env entry type: {kind}")
 
@@ -191,10 +200,53 @@ def remove_if_generated(path: Path) -> None:
         path.unlink()
 
 
+def normalize_verify_trigger_paths(
+    wrapper_definition: dict[str, Any],
+) -> dict[str, Any]:
+    on_section = wrapper_definition.get("on")
+    if not isinstance(on_section, dict):
+        return wrapper_definition
+
+    for event_name in ("push", "pull_request"):
+        event_definition = on_section.get(event_name)
+        if not isinstance(event_definition, dict):
+            continue
+
+        raw_paths = event_definition.get("paths")
+        if not isinstance(raw_paths, list):
+            continue
+
+        normalized_paths: list[str] = []
+        seen_paths: set[str] = set()
+
+        def add_path(path: str) -> None:
+            if path in seen_paths:
+                return
+            seen_paths.add(path)
+            normalized_paths.append(path)
+
+        for required_path in REQUIRED_VERIFY_TRIGGER_PATHS:
+            add_path(required_path)
+
+        for raw_path in raw_paths:
+            if not isinstance(raw_path, str):
+                continue
+            if raw_path.startswith(".github/") or raw_path.startswith(".bijux/"):
+                continue
+            add_path(raw_path)
+
+        event_definition["paths"] = normalized_paths
+
+    return wrapper_definition
+
+
 def inject_policy_gate(
     wrapper_name: str,
     wrapper_definition: dict[str, Any],
 ) -> dict[str, Any]:
+    if wrapper_name == "verify":
+        wrapper_definition = normalize_verify_trigger_paths(wrapper_definition)
+
     if wrapper_name != "verify":
         return wrapper_definition
 
@@ -212,7 +264,7 @@ def inject_policy_gate(
         "runs-on": "ubuntu-latest",
         "steps": [
             {
-                "uses": "actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8",
+                "uses": "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
             },
             {
                 "name": "Wait for policy and standards prerequisites",
@@ -247,6 +299,40 @@ def inject_policy_gate(
         updated_jobs[job_name] = job_definition
 
     wrapper_definition["jobs"] = updated_jobs
+    return wrapper_definition
+
+
+def combine_job_if(existing: Any, condition: str) -> str:
+    if not existing:
+        return f"${{{{ {condition} }}}}"
+    if not isinstance(existing, str):
+        raise TypeError("job if condition must be a string when present")
+
+    stripped = existing.strip()
+    if stripped.startswith("${{") and stripped.endswith("}}"):
+        stripped = stripped[3:-2].strip()
+    return f"${{{{ ({condition}) && ({stripped}) }}}}"
+
+
+def inject_dependabot_pull_request_skip(
+    wrapper_name: str,
+    wrapper_definition: dict[str, Any],
+) -> dict[str, Any]:
+    if wrapper_name != "ci":
+        return wrapper_definition
+
+    jobs = wrapper_definition.get("jobs")
+    if not isinstance(jobs, dict):
+        return wrapper_definition
+
+    for job_definition in jobs.values():
+        if not isinstance(job_definition, dict):
+            continue
+        job_definition["if"] = combine_job_if(
+            job_definition.get("if"),
+            DEPENDABOT_PR_SKIP_CONDITION,
+        )
+
     return wrapper_definition
 
 
@@ -288,6 +374,10 @@ def render_repo(repo_name: str, manifest: dict) -> None:
         if wrapper_definition is None:
             remove_if_generated(wrapper_path)
             continue
+        wrapper_definition = inject_dependabot_pull_request_skip(
+            wrapper_name,
+            wrapper_definition,
+        )
         wrapper_definition = inject_policy_gate(wrapper_name, wrapper_definition)
         write_if_needed(wrapper_path, render_yaml_document(wrapper_definition))
 
