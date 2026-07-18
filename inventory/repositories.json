@@ -248,7 +248,7 @@
       }
     },
     {
-      "name": "bijux-telecom",
+      "name": "bijux-gnss",
       "class": "rust",
       "stack": "rust",
       "settings": {
