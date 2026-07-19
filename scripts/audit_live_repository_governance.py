@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import json
 import subprocess
-from pathlib import Path
+
+from repository_inventory import load_inventory, merged_repository_settings
 
 
-ROOT = Path(__file__).resolve().parents[1]
-INVENTORY_PATH = ROOT / "inventory/repositories.json"
 RULESET_NAME = "main-branch-protection"
 
 
@@ -17,12 +16,6 @@ def gh_api_json(path: str) -> object:
         text=True,
     )
     return json.loads(output)
-
-
-def merged_settings(inventory: dict[str, object], repository: dict[str, object]) -> dict[str, object]:
-    defaults = inventory["repository_settings_defaults"]
-    overrides = repository.get("settings", {})
-    return {**defaults, **overrides}
 
 
 def compare_settings(
@@ -109,13 +102,13 @@ def compare_ruleset(
 
 
 def main() -> None:
-    inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
+    inventory = load_inventory()
     repositories = inventory["repositories"]
     mismatches: list[str] = []
 
     for repository in repositories:
         name = repository["name"]
-        expected_settings = merged_settings(inventory, repository)
+        expected_settings = merged_repository_settings(inventory, repository)
         live_repository = gh_api_json(f"repos/bijux/{name}")
         live_settings = {
             key: live_repository.get(key)

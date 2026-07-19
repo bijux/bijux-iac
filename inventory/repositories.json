@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "classes": {
     "foundation": {
       "description": "Control-plane repositories for governance and shared standards."
@@ -21,7 +21,7 @@
     "allow_merge_commit": true,
     "allow_squash_merge": false,
     "allow_rebase_merge": false,
-    "delete_branch_on_merge": false,
+    "delete_branch_on_merge": true,
     "allow_auto_merge": false,
     "web_commit_signoff_required": false
   },
@@ -30,6 +30,10 @@
       "name": "bijux-iac",
       "class": "foundation",
       "stack": "terraform",
+      "delivery": {
+        "documentation": "not-applicable",
+        "packages": "not-applicable"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -49,6 +53,10 @@
       "name": "bijux-std",
       "class": "foundation",
       "stack": "python",
+      "delivery": {
+        "documentation": "not-applicable",
+        "packages": "not-applicable"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -68,6 +76,10 @@
       "name": "bijux.github.io",
       "class": "web-course",
       "stack": "docs",
+      "delivery": {
+        "documentation": "published",
+        "packages": "not-applicable"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -87,6 +99,10 @@
       "name": "bijux-masterclass",
       "class": "web-course",
       "stack": "docs",
+      "delivery": {
+        "documentation": "published",
+        "packages": "not-applicable"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -106,6 +122,10 @@
       "name": "bijux-canon",
       "class": "python",
       "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -126,6 +146,10 @@
       "name": "bijux-proteomics",
       "class": "python",
       "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -146,6 +170,10 @@
       "name": "bijux-pollenomics",
       "class": "python",
       "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -166,6 +194,10 @@
       "name": "bijux-core",
       "class": "rust",
       "stack": "rust",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "settings": {
         "has_wiki": false
       },
@@ -188,6 +220,10 @@
       "name": "bijux-atlas",
       "class": "rust",
       "stack": "rust",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -207,6 +243,10 @@
       "name": "bijux-phylogenetics",
       "class": "python",
       "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "settings": {
         "has_wiki": false
       },
@@ -229,6 +269,10 @@
       "name": "bijux-genomics",
       "class": "rust",
       "stack": "rust",
+      "delivery": {
+        "documentation": "planned",
+        "packages": "planned"
+      },
       "settings": {
         "has_wiki": false
       },
@@ -251,6 +295,10 @@
       "name": "bijux-gnss",
       "class": "rust",
       "stack": "rust",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
       "settings": {
         "has_wiki": false
       },
