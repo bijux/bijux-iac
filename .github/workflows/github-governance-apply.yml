@@ -55,3 +55,8 @@ jobs:
           TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
         working-directory: infra/github/main-branch-protection
         run: terraform apply -input=false -auto-approve
+
+      - name: Audit live governance
+        env:
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+        run: python3 scripts/audit_live_repository_governance.py

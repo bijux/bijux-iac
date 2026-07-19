@@ -52,7 +52,7 @@
     {
       "name": "bijux-std",
       "class": "foundation",
-      "stack": "python",
+      "stack": "make",
       "delivery": {
         "documentation": "not-applicable",
         "packages": "not-applicable"

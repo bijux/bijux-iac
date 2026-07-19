@@ -56,7 +56,7 @@ means that repository does not own the surface.
 | Repository | Role | Stack | Documentation | Packages |
 | --- | --- | --- | --- | --- |
 | `bijux-iac` | GitHub control plane | Terraform | Not applicable | Not applicable |
-| `bijux-std` | Shared standards control plane | Python | Not applicable | Not applicable |
+| `bijux-std` | Shared standards control plane | Make | Not applicable | Not applicable |
 | `bijux.github.io` | Portfolio website | Docs | Published | Not applicable |
 | `bijux-masterclass` | Course website | Docs | Published | Not applicable |
 | `bijux-canon` | Product | Python | Published | Published |
@@ -136,7 +136,8 @@ deleting `main`.
 6. Merge only after required checks pass. The serialized apply workflow first
    patches repository settings, then imports current rulesets and applies
    Terraform.
-7. Audit the result:
+7. The workflow audits live settings and rulesets after apply. The same audit
+   is available locally:
 
    ```bash
    make live-audit
