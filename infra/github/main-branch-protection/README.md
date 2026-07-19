@@ -92,9 +92,11 @@ manual dispatch. It:
 3. initializes Terraform
 4. imports current protection resources
 5. applies the reviewed ruleset configuration non-interactively
+6. audits live repository settings and rulesets against the inventory
 
 Settings are patched before rulesets so merge methods and branch cleanup policy
-match the rules that Terraform enforces.
+match the rules that Terraform enforces. A live mismatch after apply fails the
+workflow.
 
 ## Local Validation
 

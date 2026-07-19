@@ -136,7 +136,8 @@ deleting `main`.
 6. Merge only after required checks pass. The serialized apply workflow first
    patches repository settings, then imports current rulesets and applies
    Terraform.
-7. Audit the result:
+7. The workflow audits live settings and rulesets after apply. The same audit
+   is available locally:
 
    ```bash
    make live-audit
