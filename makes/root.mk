@@ -27,6 +27,8 @@ include $(CURDIR)/.bijux/shared/bijux-makes/bijux.mk
 	tfvars-check
 
 contract-tests: inventory-check tfvars-check python-syntax-check shell-syntax-check ## Verify repository governance contracts
+	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
+		python3 -m unittest discover -s tests -p 'test_*.py'
 
 inventory-check: ## Validate the complete repository governance inventory
 	@python3 scripts/validate_repo_inventory.py

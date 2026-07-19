@@ -33,6 +33,11 @@ jobs:
       - name: Check rendered branch protection targets
         run: python3 scripts/render_main_branch_protection_tfvars.py --check
 
+      - name: Apply repository settings
+        env:
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+        run: python3 scripts/apply_repository_settings.py
+
       - name: Terraform init
         env:
           TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
