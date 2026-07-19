@@ -56,7 +56,7 @@ means that repository does not own the surface.
 | Repository | Role | Stack | Documentation | Packages |
 | --- | --- | --- | --- | --- |
 | `bijux-iac` | GitHub control plane | Terraform | Not applicable | Not applicable |
-| `bijux-std` | Shared standards control plane | Python | Not applicable | Not applicable |
+| `bijux-std` | Shared standards control plane | Make | Not applicable | Not applicable |
 | `bijux.github.io` | Portfolio website | Docs | Published | Not applicable |
 | `bijux-masterclass` | Course website | Docs | Published | Not applicable |
 | `bijux-canon` | Product | Python | Published | Published |

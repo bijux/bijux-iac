@@ -10,7 +10,7 @@ INVENTORY_PATH = ROOT / "inventory/repositories.json"
 
 FAMILY_REPOSITORIES = {
     "bijux-iac": ("foundation", "terraform", "not-applicable", "not-applicable"),
-    "bijux-std": ("foundation", "python", "not-applicable", "not-applicable"),
+    "bijux-std": ("foundation", "make", "not-applicable", "not-applicable"),
     "bijux.github.io": ("web-course", "docs", "published", "not-applicable"),
     "bijux-masterclass": ("web-course", "docs", "published", "not-applicable"),
     "bijux-canon": ("python", "python", "published", "published"),
