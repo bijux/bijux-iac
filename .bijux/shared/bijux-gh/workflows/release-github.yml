@@ -130,7 +130,7 @@ jobs:
       generate_release_notes: ${{ steps.config.outputs.generate_release_notes }}
     steps:
       - name: Checkout release configuration
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -359,14 +359,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.sha }}
 
       - name: Setup Python
         if: ${{ needs.resolve.outputs.setup_python == 'true' }}
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ needs.resolve.outputs.python_version }}
 
@@ -386,22 +386,24 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.sha }}
           TARGET_REF_NAME: ${{ github.ref_name }}
+          WAIT_FOR_CI_COMMAND: ${{ needs.resolve.outputs.wait_for_ci_command }}
         shell: bash
         run: |
           set -euo pipefail
           CI_WAIT_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           export CI_WAIT_STARTED_AT
-          eval "${{ needs.resolve.outputs.wait_for_ci_command }}"
+          eval "${WAIT_FOR_CI_COMMAND}"
 
       - name: Decide whether to publish a GitHub Release
         id: plan
         if: ${{ needs.resolve.outputs.plan_command != '' }}
         env:
+          PLAN_COMMAND: ${{ needs.resolve.outputs.plan_command }}
           TARGET_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
-          eval "${{ needs.resolve.outputs.plan_command }}"
+          eval "${PLAN_COMMAND}"
 
       - name: Resolve publish decision
         id: release
@@ -449,13 +451,14 @@ jobs:
         if: ${{ steps.release.outputs.publish == 'true' && needs.resolve.outputs.prepare_command != '' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PREPARE_COMMAND: ${{ needs.resolve.outputs.prepare_command }}
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
           RELEASE_NAME: ${{ steps.release.outputs.release_name }}
           RELEASE_VERSION: ${{ steps.release.outputs.release_version }}
         shell: bash
         run: |
           set -euo pipefail
-          eval "${{ needs.resolve.outputs.prepare_command }}"
+          eval "${PREPARE_COMMAND}"
 
       - name: Download staged release artifacts
         if: ${{ steps.release.outputs.publish == 'true' && needs.resolve.outputs.artifact_pattern != '' }}
@@ -486,7 +489,7 @@ jobs:
 
       - name: Publish GitHub release with files and body
         if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob != '' && steps.release.outputs.release_notes_path != '' }}
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ steps.release.outputs.release_tag }}
           name: ${{ steps.release.outputs.release_name }}
@@ -499,7 +502,7 @@ jobs:
 
       - name: Publish GitHub release with files
         if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob != '' && steps.release.outputs.release_notes_path == '' }}
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ steps.release.outputs.release_tag }}
           name: ${{ steps.release.outputs.release_name }}
@@ -511,7 +514,7 @@ jobs:
 
       - name: Publish GitHub release with body
         if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob == '' && steps.release.outputs.release_notes_path != '' }}
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ steps.release.outputs.release_tag }}
           name: ${{ steps.release.outputs.release_name }}
@@ -520,7 +523,7 @@ jobs:
 
       - name: Publish GitHub release without assets
         if: ${{ steps.release.outputs.publish == 'true' && steps.release.outputs.release_files_glob == '' && steps.release.outputs.release_notes_path == '' }}
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ steps.release.outputs.release_tag }}
           name: ${{ steps.release.outputs.release_name }}
