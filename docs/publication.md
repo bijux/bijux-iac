@@ -79,12 +79,18 @@ Only dispatch the accepted `publication-control.yml` on IaC `main`, specifying
 target commit, and required Contents, Checks, Actions, and Variables reads.
 This operation tests key/token creation and read access; it does not test a
 write API or require consumer trust to have been configured yet.
+The execution job records immutable inputs before creating the token, so a
+missing installation or invalid key still retains an incomplete-operation
+receipt without implying credential verification or publication succeeded.
 
 The default `preflight` operation verifies the complete publication request and
 retains an admission receipt without dispatching. Only the explicit `dispatch`
 operation sends a publication request. All operations use accepted main and
 the selected-repository token boundary. Credential verification covers the
 selected installation; it does not establish access to other repositories.
+Credential verification can inspect an applicable planned publisher's
+installation. Preflight and dispatch still require published delivery state;
+verifying access never enables a planned publication capability.
 
 The unprivileged admission job rejects a feature ref or invalid capability before
 entering the credential environment. The controller then verifies the App's

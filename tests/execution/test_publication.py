@@ -25,6 +25,9 @@ class PublicationBoundaryTests(unittest.TestCase):
         self.assertEqual(declarations["bijux-std"], {})
         validate_request(inventory, "bijux-core", "release-pypi", "a" * 40, "v1.2.3")
         validate_request(inventory, "bijux.github.io", "deploy-docs", "a" * 40, "")
+        validate_request(inventory, "bijux-genomics", "deploy-docs", "a" * 40, "", require_published=False)
+        with self.assertRaises(ValueError):
+            validate_request(inventory, "bijux-iac", "deploy-docs", "a" * 40, "", require_published=False)
         for repository, workflow, commit, tag in [
             ("outside-family", "deploy-docs", "a" * 40, ""),
             ("bijux-iac", "release-github", "a" * 40, "v1.2.3"),
@@ -117,6 +120,26 @@ class PublicationBoundaryTests(unittest.TestCase):
             self.assertIs(receipt["remote_writes"], False)
             self.assertEqual(json.loads((Path(directory) / "artifacts/publication/request.json").read_text()), receipt)
         write.assert_not_called()
+
+    def test_initial_receipt_survives_a_credential_creation_failure(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory, \
+                patch.object(publication, "ROOT", Path(directory)), \
+                patch.object(publication, "require_accepted_main"), \
+                patch("sys.argv", ["publication", "validate"]), \
+                patch.dict(os.environ, {"GITHUB_SHA": "b" * 40, "GITHUB_RUN_ID": "12",
+                                       "PUBLICATION_OPERATION": "verify-credential",
+                                       "PUBLICATION_TARGET_REPOSITORY": "bijux.github.io",
+                                       "PUBLICATION_TARGET_WORKFLOW": "deploy-docs",
+                                       "PUBLICATION_TARGET_COMMIT": "a" * 40, "PUBLICATION_TARGET_TAG": ""}), \
+                patch.object(publication, "gh_api_json") as api:
+            publication.main()
+            saved = json.loads((Path(directory) / "artifacts/publication/request.json").read_text())
+            self.assertEqual(saved["status"], "operation-not-completed")
+            self.assertEqual(saved["controller_commit"], "b" * 40)
+            self.assertIs(saved["remote_writes"], False)
+        api.assert_not_called()
+        workflow = (ROOT / ".github/workflows/publication-control.yml").read_text()
+        self.assertLess(workflow.index("Record the immutable operation"), workflow.index("Mint a token"))
 
     def test_credential_verification_observes_scoped_reads_without_requiring_publisher_trust(self):
         responses = [{"id": 12, "owner": {"login": "bijux"}, "permissions": publication.APP_PERMISSIONS},

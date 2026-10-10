@@ -16,9 +16,9 @@ from scripts.inventory.publication import validate_request, validate_publisher, 
 APP_PERMISSIONS = {"actions": "write", "contents": "read", "checks": "read", "actions_variables": "read", "metadata": "read"}
 
 
-def admit_controller(repository: str, workflow: str, commit: str, tag: str) -> str:
+def admit_controller(repository: str, workflow: str, commit: str, tag: str, *, credential_only: bool = False) -> str:
     require_accepted_main()
-    validate_request(validated_inventory(), repository, workflow, commit, tag)
+    validate_request(validated_inventory(), repository, workflow, commit, tag, require_published=not credential_only)
     actor = os.environ.get("PUBLICATION_CONTROLLER_ACTOR", "")
     if actor != "bijux-publication[bot]":
         raise ValueError("publication requires the dedicated bijux-publication App bot")
@@ -60,7 +60,7 @@ def verify_credential(repository: str, workflow: str, commit: str, tag: str) -> 
                "controller_run": os.environ["GITHUB_RUN_ID"], "status": "credential-verification-failed",
                "remote_writes": False, "dispatch_write_permission_tested": False}
     try:
-        actor = admit_controller(repository, workflow, commit, tag)
+        actor = admit_controller(repository, workflow, commit, tag, credential_only=True)
         bot = gh_api_json(f"users/{actor}")
         if bot.get("type") != "Bot" or str(bot.get("id")) != os.environ.get("PUBLICATION_CONTROLLER_ACTOR_ID"):
             raise ValueError("configured publication actor ID must identify the dedicated App bot")
@@ -116,7 +116,11 @@ def main() -> None:
         if os.environ.get("PUBLICATION_OPERATION") not in {"verify-credential", "preflight", "dispatch"}:
             raise ValueError("publication operation must be explicit")
         require_accepted_main()
-        validate_request(validated_inventory(), *values)
+        validate_request(validated_inventory(), *values, require_published=os.environ["PUBLICATION_OPERATION"] != "verify-credential")
+        write_receipt({"status": "operation-not-completed", "operation": os.environ["PUBLICATION_OPERATION"],
+                       "repository": values[0], "workflow": values[1], "commit": values[2], "tag": values[3],
+                       "controller_commit": os.environ["GITHUB_SHA"], "controller_run": os.environ["GITHUB_RUN_ID"],
+                       "remote_writes": False})
     else:
         {"verify-credential": verify_credential, "preflight": preflight, "dispatch": dispatch}[args.operation](*values)
 
