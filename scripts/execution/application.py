@@ -123,6 +123,7 @@ def preflight(privileged: bool) -> dict:
     if version.get("terraform_version") != TERRAFORM_VERSION:
         raise ValueError(f"Terraform must be {TERRAFORM_VERSION}")
     receipt = {"status": "preflight", "commit": git_head(), "privileged": privileged,
+               "remote_writes": False,
                "input_digests": input_digests(), "tools": {"terraform": TERRAFORM_VERSION, "github_provider": "6.13.0"},
                "settings": settings_plan(inventory, require_complete=privileged), "completed": [], "outstanding": []}
     if producers is not None:
@@ -175,6 +176,9 @@ def apply(receipt: dict) -> None:
                                   f"ruleset:{repository['name']}" for repository in inventory["repositories"]
                               ] + ["audit:family"]
     receipt["status"] = "applying"
+    # A write-capable operation may partially succeed; the operation ledger and
+    # post-apply audit establish the outcome rather than a preflight no-write flag.
+    receipt.pop("remote_writes", None)
     write_receipt(receipt)
     try:
         for operation in list(receipt["outstanding"]):
@@ -221,7 +225,8 @@ def main() -> None:
     if args.operation == "apply":
         apply(json.loads(RECEIPT.read_text()))
     else:
-        write_receipt({"status": "preflight"})
+        write_receipt({"status": "preflight", "commit": git_head(),
+                       "input_digests": input_digests(), "remote_writes": False})
         if PLAN.exists():
             PLAN.unlink()
         try:
