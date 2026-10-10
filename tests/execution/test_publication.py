@@ -59,6 +59,22 @@ class PublicationBoundaryTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "manual IaC control"):
                 validate_inventory(load_inventory())
 
+    def test_inventory_requires_explicit_publisher_free_foundations(self):
+        from scripts.inventory import publication as declarations
+        manifest = json.loads((ROOT / ".github/standards/repo-config.manifest.json").read_text())
+        for name in ("bijux-iac", "bijux-std"):
+            for missing in ("publication_entrypoints", "workflow_execution_policy"):
+                changed = copy.deepcopy(manifest)
+                entry = next(value for value in changed["repositories"] if value["name"] == name)
+                if missing == "workflow_execution_policy":
+                    del entry[missing]
+                else:
+                    del entry["workflow_execution_policy"][missing]
+                with self.subTest(repository=name, missing=missing), patch.object(declarations, "ROOT") as root:
+                    root.__truediv__.return_value.read_text.return_value = json.dumps(changed)
+                    with self.assertRaisesRegex(ValueError, "explicit publication capability"):
+                        declarations.publisher_declarations(load_inventory())
+
     def test_app_with_additional_permissions_is_rejected_before_consumer_reads(self):
         app = {"id": 12, "owner": {"login": "bijux"}, "permissions": {**publication.APP_PERMISSIONS, "administration": "write"}}
         with patch.object(publication, "require_accepted_main"), \

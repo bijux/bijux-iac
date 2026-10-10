@@ -22,7 +22,10 @@ def publisher_declarations(inventory: dict) -> dict:
     declarations = {}
     for entry in entries:
         allowed = WORKFLOWS & set(entry.get("workflow_allowlist", []))
-        declared = entry.get("workflow_execution_policy", {}).get("publication_entrypoints", {})
+        policy = entry.get("workflow_execution_policy")
+        if not isinstance(policy, dict) or not isinstance(policy.get("publication_entrypoints"), dict):
+            raise ValueError(f"{entry['name']}: explicit publication capability is required, including publisher-free foundations")
+        declared = policy["publication_entrypoints"]
         if set(declared) != allowed or any(value != ({"mode": "manual-only", "controller": "iac", "refs": "main-only"}
                                                     if name == "deploy-docs" else {"mode": "manual-only", "controller": "iac"})
                                            for name, value in declared.items()):
