@@ -25,6 +25,9 @@ class PublicationBoundaryTests(unittest.TestCase):
         self.assertEqual(declarations["bijux-std"], {})
         validate_request(inventory, "bijux-core", "release-pypi", "a" * 40, "v1.2.3")
         validate_request(inventory, "bijux.github.io", "deploy-docs", "a" * 40, "")
+        validate_request(inventory, "bijux-genomics", "deploy-docs", "a" * 40, "", require_published=False)
+        with self.assertRaises(ValueError):
+            validate_request(inventory, "bijux-iac", "deploy-docs", "a" * 40, "", require_published=False)
         for repository, workflow, commit, tag in [
             ("outside-family", "deploy-docs", "a" * 40, ""),
             ("bijux-iac", "release-github", "a" * 40, "v1.2.3"),

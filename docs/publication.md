@@ -88,6 +88,9 @@ retains an admission receipt without dispatching. Only the explicit `dispatch`
 operation sends a publication request. All operations use accepted main and
 the selected-repository token boundary. Credential verification covers the
 selected installation; it does not establish access to other repositories.
+Credential verification can inspect an applicable planned publisher's
+installation. Preflight and dispatch still require published delivery state;
+verifying access never enables a planned publication capability.
 
 The unprivileged admission job rejects a feature ref or invalid capability before
 entering the credential environment. The controller then verifies the App's

@@ -33,13 +33,13 @@ def publisher_declarations(inventory: dict) -> dict:
     return declarations
 
 
-def validate_request(inventory: dict, repository: str, workflow: str, commit: str, tag: str) -> None:
+def validate_request(inventory: dict, repository: str, workflow: str, commit: str, tag: str, *, require_published: bool = True) -> None:
     declarations = publisher_declarations(inventory)
     if repository not in declarations or workflow not in declarations[repository] or not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("publication requires an applicable family publisher and immutable commit")
     selected = next(entry for entry in inventory["repositories"] if entry["name"] == repository)
     surface = "documentation" if workflow == "deploy-docs" else "packages"
-    if selected["delivery"][surface] != "published":
+    if require_published and selected["delivery"][surface] != "published":
         raise ValueError("publication capability is not active for this repository")
     if workflow == "deploy-docs":
         if tag:
