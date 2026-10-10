@@ -220,6 +220,20 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 settings_plan(inventory)
             patch_settings.assert_not_called()
 
+    def test_reader_hidden_settings_are_explicit_and_never_apply_ready(self):
+        from unittest.mock import patch
+        from governance_execution import settings_plan
+        inventory = load_inventory()
+        def response(path):
+            name = path.rsplit("/", 1)[1]
+            return {"full_name": "bijux/" + name, "default_branch": "main", "visibility": "public"}
+        with patch("governance_execution.gh_api_json", side_effect=response):
+            plan = settings_plan(inventory, require_complete=False)
+            self.assertIn("allow_merge_commit", plan["bijux-iac"]["unavailable_to_reader"])
+            self.assertNotIn("allow_merge_commit", plan["bijux-iac"]["before"])
+            with self.assertRaises(ValueError):
+                settings_plan(inventory)
+
     def test_partial_apply_failure_preserves_operations_and_still_audits(self):
         import subprocess
         from unittest.mock import patch

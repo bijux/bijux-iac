@@ -193,7 +193,9 @@ cannot reveal an existing secret value; an administrator must enter its value
 through GitHub settings or `gh secret set --env governance-apply`.
 
 PR planning uses only the workflow's read-only GitHub token. Public metadata and
-ruleset reads suffice for planning; privileged preflight repeats discovery with
+ruleset reads suffice for the read-only ruleset plan. The PR receipt explicitly
+records settings withheld from readers; it cannot authorize application.
+Privileged preflight requires a complete settings diff and repeats discovery with
 administration visibility, including bypass actors. A missing bypass field is
 an audit failure, not evidence that bypass is disabled.
 

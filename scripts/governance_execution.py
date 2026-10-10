@@ -59,7 +59,7 @@ def terraform(*arguments: str, capture: bool = False) -> str:
     return result.stdout if capture else ""
 
 
-def settings_plan(inventory: dict) -> dict:
+def settings_plan(inventory: dict, *, require_complete: bool = True) -> dict:
     changes = {}
     for repository in inventory["repositories"]:
         name = repository["name"]
@@ -67,9 +67,12 @@ def settings_plan(inventory: dict) -> dict:
         if not isinstance(live, dict) or live.get("full_name") != f"bijux/{name}" or live.get("default_branch") != "main":
             raise ValueError(f"{name}: repository identity/default branch could not be verified")
         expected = merged_repository_settings(inventory, repository)
-        if not all(key in live and type(live[key]) is type(value) for key, value in expected.items()):
+        unavailable = [key for key in expected if key not in live]
+        if (require_complete and unavailable) or any(type(live[key]) is not type(value) for key, value in expected.items() if key in live):
             raise ValueError(f"{name}: incomplete or malformed live settings")
-        changes[name] = {"before": {key: live[key] for key in expected}, "after": expected}
+        changes[name] = {"before": {key: live[key] for key in expected if key in live}, "after": expected}
+        if unavailable:
+            changes[name]["unavailable_to_reader"] = unavailable
     return changes
 
 
@@ -114,7 +117,7 @@ def preflight(privileged: bool) -> dict:
         raise ValueError(f"Terraform must be {TERRAFORM_VERSION}")
     receipt = {"status": "preflight", "commit": git_head(), "privileged": privileged,
                "input_digests": input_digests(), "tools": {"terraform": TERRAFORM_VERSION, "github_provider": "6.13.0"},
-               "settings": settings_plan(inventory), "completed": [], "outstanding": []}
+               "settings": settings_plan(inventory, require_complete=privileged), "completed": [], "outstanding": []}
     write_receipt(receipt)
     subprocess.run(["make", "contract-tests", "terraform-validate"], cwd=ROOT, check=True)
     # Each execution rebuilds state from authoritative discovery, including retries.
