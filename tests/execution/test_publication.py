@@ -103,6 +103,50 @@ class PublicationBoundaryTests(unittest.TestCase):
                 publication.dispatch("bijux-canon", "release-pypi", "a" * 40, "v1.2.3")
             stored = json.loads((Path(directory) / "artifacts/publication/request.json").read_text())
             self.assertEqual(stored["status"], "dispatch-failed")
+            self.assertIsNone(stored["remote_writes"])
+            self.assertIs(stored["remote_write_attempted"], True)
+
+    def test_preflight_retains_complete_admission_without_dispatch(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory, \
+                patch.object(publication, "ROOT", Path(directory)), \
+                patch.object(publication, "request", return_value={"commit": "a" * 40, "required_commit_checks": ["verification-ready"]}), \
+                patch.dict(os.environ, {"GITHUB_SHA": "b" * 40, "GITHUB_RUN_ID": "12"}), \
+                patch.object(publication.subprocess, "run") as write:
+            receipt = publication.preflight("bijux.github.io", "deploy-docs", "a" * 40, "")
+            self.assertEqual(receipt["status"], "admitted")
+            self.assertIs(receipt["remote_writes"], False)
+            self.assertEqual(json.loads((Path(directory) / "artifacts/publication/request.json").read_text()), receipt)
+        write.assert_not_called()
+
+    def test_credential_verification_observes_scoped_reads_without_requiring_publisher_trust(self):
+        responses = [{"id": 12, "owner": {"login": "bijux"}, "permissions": publication.APP_PERMISSIONS},
+                     {"id": 123, "type": "Bot"}, {"full_name": "bijux/bijux.github.io", "default_branch": "main"},
+                     {"sha": "a" * 40}, {"check_runs": []}, {"workflows": []}, {"variables": []}]
+        with tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory, \
+                patch.object(publication, "ROOT", Path(directory)), \
+                patch.object(publication, "require_accepted_main"), \
+                patch.dict(os.environ, {"GITHUB_SHA": "b" * 40, "GITHUB_RUN_ID": "12",
+                                       "PUBLICATION_CONTROLLER_ACTOR": "bijux-publication[bot]",
+                                       "PUBLICATION_CONTROLLER_ACTOR_ID": "123", "PUBLICATION_APP_ID": "12"}), \
+                patch.object(publication, "gh_api_json") as api, \
+                patch.object(publication.subprocess, "run") as write:
+            api.side_effect = copy.deepcopy(responses)
+            receipt = publication.verify_credential("bijux.github.io", "deploy-docs", "a" * 40, "")
+            self.assertEqual(receipt["status"], "credential-verified")
+            self.assertIs(receipt["remote_writes"], False)
+            self.assertIs(receipt["dispatch_write_permission_tested"], False)
+            self.assertEqual(api.call_args_list[-1].args, ("repos/bijux/bijux.github.io/actions/variables?per_page=1",))
+            for changed in [dict(responses[1], id=999), dict(responses[3], sha="c" * 40), {"variables": None}]:
+                denied = copy.deepcopy(responses)
+                index = 1 if "id" in changed else 3 if "sha" in changed else 6
+                denied[index] = changed
+                api.side_effect = denied
+                with self.subTest(response=changed), self.assertRaises(ValueError):
+                    publication.verify_credential("bijux.github.io", "deploy-docs", "a" * 40, "")
+                saved = json.loads((Path(directory) / "artifacts/publication/request.json").read_text())
+                self.assertEqual(saved["status"], "credential-verification-failed")
+                self.assertIs(saved["remote_writes"], False)
+        write.assert_not_called()
 
     def test_denied_admission_cannot_dispatch(self):
         with patch.object(publication, "request", side_effect=ValueError("unhealthy checks")), \
@@ -154,6 +198,9 @@ class PublicationBoundaryTests(unittest.TestCase):
         self.assertLess(workflow.index('[[ "$APPLY_REF" == "refs/heads/main" ]]'), workflow.index("environment: publication-control"))
         self.assertLess(workflow.index("publication validate"), workflow.index("secrets.BIJUX_PUBLICATION_APP_PRIVATE_KEY"))
         self.assertIn("repositories: ${{ inputs.repository }}", workflow)
+        self.assertIn("default: preflight", workflow)
+        self.assertIn("options: [verify-credential, preflight, dispatch]", workflow)
+        self.assertIn('publication "$PUBLICATION_OPERATION"', workflow)
 
 
 if __name__ == "__main__":
