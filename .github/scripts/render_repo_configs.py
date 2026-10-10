@@ -98,9 +98,7 @@ def yaml_block_scalar(value: str, indent: int) -> list[str]:
     pad = " " * indent
     lines = [f"{pad}|"]
     for line in value.splitlines():
-        lines.append(f"{pad}  {line}")
-    if value.endswith("\n"):
-        lines.append(f"{pad}")
+        lines.append(f"{pad}  {line}" if line else "")
     return lines
 
 
@@ -193,7 +191,7 @@ def render_release_env(entries: list[dict]) -> str:
 
 
 def render_yaml_document(data: Any, *, preserve_scalar_types: bool = False) -> str:
-    return PROVENANCE_HEADER + "\n".join(dump_yaml(data, preserve_scalar_types=preserve_scalar_types)) + "\n"
+    return PROVENANCE_HEADER + "\n".join(dump_yaml(data, preserve_scalar_types=preserve_scalar_types)).rstrip("\n") + "\n"
 
 
 def render_dependabot_document(data: Any) -> str:
