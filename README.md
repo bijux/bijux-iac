@@ -167,6 +167,9 @@ Run commands from the repository root.
 
 Generated providers, Python bytecode, reports, and other local output are
 contained under `artifacts/`.
+Local Terraform validation copies the governed module inputs into
+`artifacts/terraform/module` so initialization writes its provider lock and
+working files there. Formatting still checks the authored module directly.
 
 ## Prerequisites
 

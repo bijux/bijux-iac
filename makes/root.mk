@@ -4,6 +4,7 @@ include $(ROOT_MAKEFILE_DIR)/bijux-std.mk
 
 TERRAFORM_ROOT := infra/github/main-branch-protection
 TERRAFORM_DATA_DIR := $(CURDIR)/artifacts/terraform/data
+TERRAFORM_WORK_DIR := $(CURDIR)/artifacts/terraform/module
 PYTHON_CACHE_ROOT := $(CURDIR)/artifacts/python/pycache
 
 BIJUX_FMT_TARGETS += terraform-format-check
@@ -26,6 +27,7 @@ include $(CURDIR)/.bijux/shared/bijux-makes/bijux.mk
 	shell-syntax-check \
 	terraform-format-check \
 	terraform-init \
+	terraform-inputs \
 	terraform-validate \
 	tfvars-check
 
@@ -56,14 +58,19 @@ live-audit: ## Compare inventory with live GitHub governance
 terraform-format-check: ## Verify Terraform source formatting
 	@terraform -chdir="$(TERRAFORM_ROOT)" fmt -check -recursive
 
-terraform-init: ## Initialize Terraform providers under artifacts
+terraform-inputs: ## Prepare an isolated copy of the governed Terraform inputs
+	@mkdir -p "$(TERRAFORM_WORK_DIR)"
+	@rm -f "$(TERRAFORM_WORK_DIR)"/*.tf "$(TERRAFORM_WORK_DIR)/terraform.auto.tfvars.json"
+	@cp "$(TERRAFORM_ROOT)"/*.tf "$(TERRAFORM_ROOT)/terraform.auto.tfvars.json" "$(TERRAFORM_WORK_DIR)/"
+
+terraform-init: terraform-inputs ## Initialize Terraform providers and locks under artifacts
 	@mkdir -p "$(TERRAFORM_DATA_DIR)"
 	@TF_DATA_DIR="$(TERRAFORM_DATA_DIR)" \
-		terraform -chdir="$(TERRAFORM_ROOT)" init -backend=false -input=false
+		terraform -chdir="$(TERRAFORM_WORK_DIR)" init -backend=false -input=false
 
 terraform-validate: terraform-init ## Validate the managed GitHub Terraform module
 	@TF_DATA_DIR="$(TERRAFORM_DATA_DIR)" \
-		terraform -chdir="$(TERRAFORM_ROOT)" validate
+		terraform -chdir="$(TERRAFORM_WORK_DIR)" validate
 
 repository-tools: ## Verify required governance tools are installed
 	@command -v python3 >/dev/null
