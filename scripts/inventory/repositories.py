@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 INVENTORY_PATH = ROOT / "inventory/repositories.json"
 
 FAMILY_REPOSITORIES = {
@@ -68,7 +68,7 @@ def merged_repository_settings(
 
 
 def validated_inventory() -> dict[str, Any]:
-    from validate_repo_inventory import validate_inventory
+    from scripts.inventory.validate import validate_inventory
 
     inventory = load_inventory()
     validate_inventory(inventory)

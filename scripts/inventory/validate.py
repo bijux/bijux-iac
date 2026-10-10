@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from repository_inventory import (
+from scripts.inventory.repositories import (
     BASELINE_REQUIRED_STATUS_CHECKS,
     FAMILY_REPOSITORIES,
     load_inventory,

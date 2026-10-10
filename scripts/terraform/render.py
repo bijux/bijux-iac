@@ -3,13 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 
-from repository_inventory import validated_inventory
+from scripts.inventory.repositories import ROOT, validated_inventory
 
 
-ROOT = Path(__file__).resolve().parents[1]
-INVENTORY_PATH = ROOT / "inventory/repositories.json"
 TFVARS_PATH = ROOT / "infra/github/main-branch-protection/terraform.auto.tfvars.json"
 
 
@@ -88,7 +85,7 @@ def main() -> None:
         current = TFVARS_PATH.read_text(encoding="utf-8")
         if current != rendered:
             raise SystemExit(
-                f"generated tfvars drift: run python3 {Path(__file__).name} --write"
+                "generated tfvars drift: run python3 -m scripts.terraform.render --write"
             )
         print("tfvars: OK")
         return

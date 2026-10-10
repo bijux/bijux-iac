@@ -33,27 +33,27 @@ include $(CURDIR)/.bijux/shared/bijux-makes/bijux.mk
 
 contract-tests: inventory-check tfvars-check python-syntax-check shell-syntax-check ## Verify repository governance contracts
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
-		python3 -m unittest discover -s tests -p 'test_*.py'
+		python3 -m unittest discover -s tests -t . -p 'test_*.py'
 
 inventory-check: ## Validate the complete repository governance inventory
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
-		python3 scripts/validate_repo_inventory.py
+		python3 -m scripts.inventory.validate
 
 tfvars-check: ## Verify committed Terraform inputs match the inventory
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
-		python3 scripts/render_main_branch_protection_tfvars.py --check
+		python3 -m scripts.terraform.render --check
 
 python-syntax-check: ## Compile repository-owned Python without source-tree caches
 	@mkdir -p "$(PYTHON_CACHE_ROOT)"
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
-		python3 -m py_compile scripts/*.py
+		python3 -m compileall -q scripts
 
 shell-syntax-check: ## Validate repository-owned shell scripts
 	@bash -n "$(TERRAFORM_ROOT)/scripts/import_main_branch_protection.sh"
 
 live-audit: ## Compare inventory with live GitHub governance
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
-		python3 scripts/audit_live_repository_governance.py
+		python3 -m scripts.github.audit
 
 terraform-format-check: ## Verify Terraform source formatting
 	@terraform -chdir="$(TERRAFORM_ROOT)" fmt -check -recursive

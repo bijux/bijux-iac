@@ -7,9 +7,10 @@ import os
 from pathlib import Path
 import subprocess
 
-from audit_live_repository_governance import list_rulesets, RULESET_NAME
-from render_main_branch_protection_tfvars import render_payload
-from repository_inventory import ROOT, validated_inventory, validate_owner
+from scripts.github.audit import RULESET_NAME
+from scripts.github.api import list_rulesets
+from scripts.terraform.render import render_payload
+from scripts.inventory.repositories import ROOT, validated_inventory, validate_owner
 
 WORK_DIR = ROOT / "artifacts/terraform/module"
 

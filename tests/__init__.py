@@ -1,0 +1,1 @@
+"""Offline governance contract fixtures."""

@@ -9,10 +9,11 @@ import os
 from pathlib import Path
 import subprocess
 
-from audit_live_repository_governance import audit, gh_api_json, compare_settings
-from apply_repository_settings import apply_settings
-from import_main_branch_protection import import_rulesets, WORK_DIR
-from repository_inventory import ROOT, validated_inventory, merged_repository_settings, validate_owner
+from scripts.github.audit import audit, compare_settings
+from scripts.github.api import gh_api_json
+from scripts.github.settings import apply_settings
+from scripts.terraform.imports import import_rulesets, WORK_DIR
+from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
 
 ARTIFACTS = ROOT / "artifacts/governance"
 RECEIPT = ARTIFACTS / "receipt.json"

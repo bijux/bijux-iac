@@ -79,9 +79,12 @@ names from re-entering the control plane.
 | Path | Purpose |
 | --- | --- |
 | [`inventory/repositories.json`](inventory/repositories.json) | Authoritative family, settings, delivery state, and ruleset inputs |
-| [`scripts/`](scripts) | Inventory validation, deterministic rendering, settings application, and live audit |
+| [`scripts/inventory/`](scripts/inventory) | Family identity, canonical inventory formatting, and closed policy validation |
+| [`scripts/github/`](scripts/github) | API reads, complete live audit, and bounded repository settings writes |
+| [`scripts/terraform/`](scripts/terraform) | Deterministic ruleset inputs and authoritative imports |
+| [`scripts/execution/`](scripts/execution) | Accepted-main preflight and application of the bound plan |
 | [`infra/github/main-branch-protection/`](infra/github/main-branch-protection) | Terraform module for legacy branch protection and current repository rulesets |
-| [`tests/`](tests) | Executable family and rendering contracts |
+| [`tests/`](tests) | Offline contracts grouped by the same inventory, GitHub, Terraform, and execution boundaries |
 | [`makes/`](makes) | Repository-owned composition of shared Make foundations |
 | [`.bijux/shared/`](.bijux/shared) | Generated standards payload selected by capability |
 
@@ -121,7 +124,7 @@ deleting `main`.
 3. If branch policy changed, regenerate the committed input:
 
    ```bash
-   python3 scripts/render_main_branch_protection_tfvars.py --write
+   python3 -B -m scripts.terraform.render --write
    ```
 
 4. Run the repository gates:

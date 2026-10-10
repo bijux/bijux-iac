@@ -5,7 +5,7 @@ import argparse
 import json
 import subprocess
 
-from repository_inventory import validated_inventory, merged_repository_settings, validate_owner
+from scripts.inventory.repositories import validated_inventory, merged_repository_settings, validate_owner
 
 
 def apply_settings(owner: str, name: str, settings: dict[str, object]) -> None:
@@ -40,7 +40,7 @@ def main() -> None:
 
     validate_owner(args.owner)
     # Settings cannot be applied independently of the bound ruleset preflight.
-    from governance_execution import apply, RECEIPT
+    from scripts.execution.application import apply, RECEIPT
     apply(json.loads(RECEIPT.read_text()))
 
 
