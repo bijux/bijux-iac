@@ -3,55 +3,64 @@ name: github-governance-plan
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  plan:
+  contracts:
+    name: iac / contracts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.1.0
         with:
-          python-version: "3.11"
+          persist-credentials: false
+      - name: Run inventory and application contracts
+        run: make contract-tests
 
+  plan:
+    name: iac / plan
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TF_VAR_github_token: ${{ github.token }}
+      PYTHONPYCACHEPREFIX: ${{ github.workspace }}/artifacts/python/pycache
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: 1.16.5
+          terraform_wrapper: false
+      - name: Plan repository settings and rulesets without write credentials
+        run: python3 scripts/governance_execution.py plan
+      - name: Retain governance receipt
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: governance-plan-receipt
+          path: artifacts/governance/receipt.json
+          if-no-files-found: error
 
-      - name: Validate repository inventory
-        run: python3 scripts/validate_repo_inventory.py
-
-      - name: Check rendered branch protection targets
-        run: python3 scripts/render_main_branch_protection_tfvars.py --check
-
-      - name: Terraform fmt
-        working-directory: infra/github/main-branch-protection
-        run: terraform fmt -check -recursive
-
-      - name: Terraform init
+  governance:
+    name: iac / governance
+    if: ${{ always() }}
+    needs: [contracts, plan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful contracts and read-only plan
         env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: terraform init
-
-      - name: Import current branch protection state
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: ./scripts/import_main_branch_protection.sh
-
-      - name: Terraform validate
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: terraform validate
-
-      - name: Terraform plan
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: terraform plan -input=false -out=tfplan
+          CONTRACTS_RESULT: ${{ needs.contracts.result }}
+          PLAN_RESULT: ${{ needs.plan.result }}
+        run: |
+          set -euo pipefail
+          [[ "$CONTRACTS_RESULT" == "success" ]] || exit 1
+          [[ "$PLAN_RESULT" == "success" ]] || exit 1

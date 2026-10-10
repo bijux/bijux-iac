@@ -155,5 +155,102 @@ class ImportDiscoveryTests(unittest.TestCase):
                     list_rulesets("bijux-iac")
 
 
+class ApplicationBoundaryTests(unittest.TestCase):
+    def test_unaccepted_dispatches_fail_before_api_reads(self):
+        from unittest.mock import patch
+        from governance_execution import require_main
+        for repository, event, ref in [("other/repository", "workflow_dispatch", "refs/heads/main"),
+                                       ("bijux/bijux-iac", "pull_request", "refs/heads/main"),
+                                       ("bijux/bijux-iac", "workflow_dispatch", "refs/heads/feature")]:
+            with self.subTest(ref=ref), patch("governance_execution.gh_api_json") as api:
+                with self.assertRaises(ValueError):
+                    require_main(repository, event, ref, "commit")
+                api.assert_not_called()
+
+    def test_accepted_dispatch_must_match_remote_main_and_checked_out_commit(self):
+        from unittest.mock import patch
+        from governance_execution import require_main
+        with patch("governance_execution.gh_api_json", return_value={"sha": "accepted"}), \
+                patch("governance_execution.git_head", return_value="accepted"):
+            require_main("bijux/bijux-iac", "workflow_dispatch", "refs/heads/main", "accepted")
+            with self.assertRaises(ValueError):
+                require_main("bijux/bijux-iac", "workflow_dispatch", "refs/heads/main", "outdated")
+
+    def test_pr_planning_does_not_reference_administration_secrets(self):
+        workflow = (ROOT / ".github/workflows/github-governance-plan.yml").read_text()
+        self.assertNotIn("secrets.", workflow)
+        self.assertNotIn("pull_request_target", workflow)
+        self.assertNotIn("contents: write", workflow)
+        self.assertIn("TF_VAR_github_token: ${{ github.token }}", workflow)
+
+    def test_owned_aggregate_rejects_failure_cancellation_and_skips(self):
+        import subprocess
+        workflow = (ROOT / ".github/workflows/github-governance-plan.yml").read_text()
+        command = workflow.rsplit("        run: |\n", 1)[1]
+        command = "\n".join(line[10:] for line in command.splitlines())
+        for dependency in ["CONTRACTS_RESULT", "PLAN_RESULT"]:
+            for result in ["success", "failure", "cancelled", "skipped"]:
+                with self.subTest(dependency=dependency, result=result):
+                    environment = {"CONTRACTS_RESULT": "success", "PLAN_RESULT": "success", dependency: result}
+                    status = subprocess.run(["bash", "-c", command], env=environment, capture_output=True).returncode
+                    self.assertEqual(status == 0, result == "success")
+
+    def test_changed_inputs_and_nonprivileged_plans_are_rejected_before_writes(self):
+        from unittest.mock import patch
+        from governance_execution import verify_receipt
+        with patch("governance_execution.input_digests", return_value={"inventory": "current"}), \
+                patch("governance_execution.git_head", return_value="accepted"):
+            for receipt in [{"status": "planned", "privileged": False},
+                            {"status": "planned", "privileged": True, "commit": "accepted", "input_digests": {"inventory": "old"}}]:
+                with self.assertRaises(ValueError):
+                    verify_receipt(receipt)
+
+    def test_settings_discovery_failure_never_patches_an_earlier_repository(self):
+        from unittest.mock import patch
+        from governance_execution import settings_plan
+        inventory = load_inventory()
+        responses = []
+        for repository in inventory["repositories"]:
+            responses.append({**merged_repository_settings(inventory, repository),
+                              "full_name": "bijux/" + repository["name"], "default_branch": "main"})
+        responses[-1] = {"message": "denied"}
+        with patch("governance_execution.gh_api_json", side_effect=responses), \
+                patch("governance_execution.apply_settings") as patch_settings:
+            with self.assertRaises(ValueError):
+                settings_plan(inventory)
+            patch_settings.assert_not_called()
+
+    def test_partial_apply_failure_preserves_operations_and_still_audits(self):
+        import subprocess
+        from unittest.mock import patch
+        from governance_execution import apply
+        settings = {repository["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
+                    for repository in load_inventory()["repositories"]}
+        receipt = {"settings": settings, "completed": []}
+        with patch("governance_execution.require_accepted_main"), patch("governance_execution.verify_receipt"), \
+                patch("governance_execution.settings_plan", return_value=settings), \
+                patch("governance_execution.write_receipt"), patch("governance_execution.apply_settings"), \
+                patch("governance_execution.terraform", side_effect=subprocess.CalledProcessError(1, ["terraform"])), \
+                patch("governance_execution.audit", return_value=["bijux-pollenomics: incomplete ruleset"]) as live_audit:
+            with self.assertRaises(subprocess.CalledProcessError):
+                apply(receipt)
+        live_audit.assert_called_once()
+        self.assertEqual(receipt["status"], "failed")
+        self.assertIn("settings:bijux-iac", receipt["completed"])
+        self.assertIn("ruleset:bijux-pollenomics", receipt["outstanding"])
+        self.assertIn("audit:family", receipt["outstanding"])
+        self.assertIn("ruleset:bijux-iac", receipt["completed"])
+
+    def test_standalone_settings_reject_arbitrary_scope_before_patch(self):
+        from unittest.mock import patch
+        from apply_repository_settings import apply_settings
+        with patch("apply_repository_settings.subprocess.run") as run:
+            with self.assertRaises(SystemExit):
+                apply_settings("other", "bijux-iac", {})
+            with self.assertRaises(ValueError):
+                apply_settings("bijux", "outside-family", {})
+            run.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
