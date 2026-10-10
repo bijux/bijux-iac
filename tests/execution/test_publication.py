@@ -187,6 +187,34 @@ class PublicationBoundaryTests(unittest.TestCase):
                 self.assertIs(saved["remote_writes"], False)
         write.assert_not_called()
 
+    def test_credential_verification_accepts_opaque_tokens_without_recording_secrets(self):
+        responses = [{"id": 12, "owner": {"login": "bijux"}, "permissions": publication.APP_PERMISSIONS},
+                     {"id": 123, "type": "Bot"}, {"full_name": "bijux/bijux.github.io", "default_branch": "main"},
+                     {"sha": "a" * 40}, {"check_runs": []}, {"workflows": []}, {"variables": []}]
+        tokens = [("ghs_" + "a" * 36, "opaque"),
+                  ("ghs_12_" + "a" * 170 + "." + "b" * 170 + "." + "c" * 171, "stateless"),
+                  ("ghs_12_" + "a" * 1000 + "." + "b" * 1000 + ".signature", "stateless"),
+                  ("unclassified_opaque_token", "opaque")]
+        for token, observed in tokens:
+            with self.subTest(characters=len(token)), \
+                    tempfile.TemporaryDirectory(dir=ROOT / "artifacts") as directory, \
+                    patch.object(publication, "ROOT", Path(directory)), \
+                    patch.object(publication, "require_accepted_main"), \
+                    patch.dict(os.environ, {"GITHUB_SHA": "b" * 40, "GITHUB_RUN_ID": "12",
+                                           "PUBLICATION_CONTROLLER_ACTOR": "bijux-publication[bot]",
+                                           "PUBLICATION_CONTROLLER_ACTOR_ID": "123", "PUBLICATION_APP_ID": "12",
+                                           "GH_TOKEN": token}), \
+                    patch.object(publication, "gh_api_json", side_effect=copy.deepcopy(responses)), \
+                    patch.object(publication.subprocess, "run") as write:
+                receipt = publication.verify_credential("bijux.github.io", "deploy-docs", "a" * 40, "")
+                self.assertEqual(receipt["status"], "credential-verified")
+                self.assertEqual(receipt["credential_transport"], {"characters": len(token), "observed_format": observed})
+                self.assertEqual(os.environ["GH_TOKEN"], token)
+                serialized = (Path(directory) / "artifacts/publication/request.json").read_text()
+                self.assertNotIn(token, serialized)
+                self.assertIs(receipt["remote_writes"], False)
+                write.assert_not_called()
+
     def test_denied_admission_cannot_dispatch(self):
         with patch.object(publication, "request", side_effect=ValueError("unhealthy checks")), \
                 patch.object(publication.subprocess, "run") as write:
