@@ -7,6 +7,20 @@ from scripts.inventory.repositories import load_inventory
 
 class RulesetAuditTests(unittest.TestCase):
 
+    def test_feature_audit_reports_every_disabled_missing_and_mistyped_surface(self):
+        from scripts.github.audit import compare_settings
+
+        expected = {
+            "has_issues": True, "has_discussions": True,
+            "has_projects": True, "has_wiki": True,
+        }
+        live = {"has_issues": False, "has_projects": "true", "has_wiki": 1}
+        errors = compare_settings("bijux-core", expected, live)
+        self.assertEqual(len(errors), 4)
+        for feature in expected:
+            self.assertTrue(any(feature in error for error in errors), feature)
+        self.assertEqual(compare_settings("bijux-core", expected, expected), [])
+
     @staticmethod
     def healthy_ruleset():
         from scripts.github.audit import STATUS_APP_ID

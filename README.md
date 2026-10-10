@@ -79,11 +79,18 @@ Every entry uses the same `name`, `class`, `stack`, `delivery`, `settings`, and
 `governance` shape, ordered by foundations, hubs, Rust products, and Python
 products. Shared repository settings are declared once in
 `repository_settings_defaults`. An explicit `settings: {}` inherits them;
-nonempty objects declare only real differences. The four existing wiki overrides
-remain visible. Overrides cannot weaken the common visibility, issues, merge,
-branch-deletion, or sign-off contract, and restating a default is rejected.
+nonempty objects declare only real differences. Issues, Discussions, Projects
+and Wiki are enabled for every family member through shared defaults. Overrides
+cannot disable these features or weaken the common visibility, merge,
+branch-deletion or sign-off contract, and restating a default is rejected.
 Unknown or duplicate keys fail validation. The inventory validator's `--write`
 option writes the canonical family order and formatting.
+
+These feature settings keep the configurable repository navigation surfaces
+consistent. GitHub controls the other tab labels, ordering, responsive overflow
+and availability by viewer permissions; Settings remains visible to repository
+administrators. Enabling a feature does not create discussions, project boards
+or wiki content. See [GitHub repository features](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository).
 
 ## Repository Layout
 

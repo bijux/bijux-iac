@@ -56,6 +56,25 @@ class InventoryContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate inventory key"):
             load_inventory(path)
 
+    def test_family_features_cannot_be_missing_mistyped_or_disabled(self):
+        import copy
+        from scripts.inventory.validate import validate_inventory
+
+        for feature in ("has_issues", "has_discussions", "has_projects", "has_wiki"):
+            for value in (False, "true", 1):
+                inventory = copy.deepcopy(self.inventory)
+                inventory["repository_settings_defaults"][feature] = value
+                with self.subTest(feature=feature, value=value), self.assertRaises(SystemExit):
+                    validate_inventory(inventory)
+            inventory = copy.deepcopy(self.inventory)
+            del inventory["repository_settings_defaults"][feature]
+            with self.subTest(feature=feature, missing=True), self.assertRaises(SystemExit):
+                validate_inventory(inventory)
+            inventory = copy.deepcopy(self.inventory)
+            inventory["repositories"][0]["settings"][feature] = False
+            with self.subTest(feature=feature, override=False), self.assertRaises(SystemExit):
+                validate_inventory(inventory)
+
     def test_disabled_legacy_and_boolean_review_inventory_are_rejected(self):
         import copy
         from scripts.inventory.validate import validate_inventory

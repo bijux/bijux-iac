@@ -19,6 +19,8 @@ ALLOWED_VISIBILITIES = {"public"}
 REPOSITORY_SETTING_TYPES = {
     "visibility": str,
     "has_issues": bool,
+    "has_discussions": bool,
+    "has_projects": bool,
     "has_wiki": bool,
     "allow_merge_commit": bool,
     "allow_squash_merge": bool,
@@ -31,6 +33,7 @@ REPOSITORY_SETTING_TYPES = {
 
 COMMON_SETTINGS = {
     "visibility": "public", "has_issues": True,
+    "has_discussions": True, "has_projects": True, "has_wiki": True,
     "allow_merge_commit": True, "allow_squash_merge": False,
     "allow_rebase_merge": False, "delete_branch_on_merge": True,
     "allow_auto_merge": False, "web_commit_signoff_required": False,

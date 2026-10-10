@@ -17,6 +17,8 @@
   "repository_settings_defaults": {
     "visibility": "public",
     "has_issues": true,
+    "has_discussions": true,
+    "has_projects": true,
     "has_wiki": true,
     "allow_merge_commit": true,
     "allow_squash_merge": false,
@@ -129,9 +131,7 @@
         "documentation": "planned",
         "packages": "planned"
       },
-      "settings": {
-        "has_wiki": false
-      },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -154,9 +154,7 @@
         "documentation": "published",
         "packages": "published"
       },
-      "settings": {
-        "has_wiki": false
-      },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -202,9 +200,7 @@
         "documentation": "published",
         "packages": "published"
       },
-      "settings": {
-        "has_wiki": false
-      },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
@@ -299,9 +295,7 @@
         "documentation": "published",
         "packages": "published"
       },
-      "settings": {
-        "has_wiki": false
-      },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
