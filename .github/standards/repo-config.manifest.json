@@ -924,39 +924,11 @@
             "push": {
               "branches": [
                 "main"
-              ],
-              "paths": [
-                ".github/workflows/**",
-                "apis/**",
-                "configs/**",
-                "docs/**",
-                "makes/**",
-                "packages/**",
-                "Makefile",
-                "mkdocs.shared.yml",
-                "mkdocs.yml",
-                "pyproject.toml",
-                "tox.ini",
-                "uv.lock"
               ]
             },
             "pull_request": {
               "branches": [
                 "main"
-              ],
-              "paths": [
-                ".github/workflows/**",
-                "apis/**",
-                "configs/**",
-                "docs/**",
-                "makes/**",
-                "packages/**",
-                "Makefile",
-                "mkdocs.shared.yml",
-                "mkdocs.yml",
-                "pyproject.toml",
-                "tox.ini",
-                "uv.lock"
               ]
             },
             "workflow_dispatch": null,
@@ -1199,7 +1171,7 @@
                     "SUPPORTED_PYTHON_RESULT": "${{ needs.supported_python.result }}",
                     "INSTALLED_FAMILY_RESULT": "${{ needs.installed_family.result }}"
                   },
-                  "run": "set -euo pipefail\n[[ \"${REPOSITORY_RESULT}\" == \"success\" ]]\n[[ \"${PACKAGE_RESULT}\" == \"success\" ]]\n[[ \"${SUPPORTED_PYTHON_RESULT}\" == \"success\" ]]\n[[ \"${INSTALLED_FAMILY_RESULT}\" == \"success\" ]]\n"
+                  "run": "set -euo pipefail\n[[ \"${REPOSITORY_RESULT}\" == \"success\" ]] || exit 1\n[[ \"${PACKAGE_RESULT}\" == \"success\" ]] || exit 1\n[[ \"${SUPPORTED_PYTHON_RESULT}\" == \"success\" ]] || exit 1\n[[ \"${INSTALLED_FAMILY_RESULT}\" == \"success\" ]] || exit 1\n"
                 }
               ]
             }
@@ -1215,7 +1187,11 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c"
+      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "dependency_pull_requests": "canonical"
+      }
     },
     {
       "name": "bijux-core",
@@ -2299,6 +2275,20 @@
       "workflow_allowlist": [
         "github-policy",
         "pr-approval-policy"
+      ],
+      "additional_required_status_checks": [
+        {
+          "context": "iac / contracts",
+          "workflow": "github-governance-plan"
+        },
+        {
+          "context": "iac / plan",
+          "workflow": "github-governance-plan"
+        },
+        {
+          "context": "iac / governance",
+          "workflow": "github-governance-plan"
+        }
       ]
     },
     {
@@ -3286,39 +3276,11 @@
             "push": {
               "branches": [
                 "main"
-              ],
-              "paths": [
-                ".github/workflows/**",
-                "apis/**",
-                "configs/**",
-                "docs/**",
-                "makes/**",
-                "packages/**",
-                "Makefile",
-                "mkdocs.shared.yml",
-                "mkdocs.yml",
-                "pyproject.toml",
-                "tox.ini",
-                "uv.lock"
               ]
             },
             "pull_request": {
               "branches": [
                 "main"
-              ],
-              "paths": [
-                ".github/workflows/**",
-                "apis/**",
-                "configs/**",
-                "docs/**",
-                "makes/**",
-                "packages/**",
-                "Makefile",
-                "mkdocs.shared.yml",
-                "mkdocs.yml",
-                "pyproject.toml",
-                "tox.ini",
-                "uv.lock"
               ]
             },
             "workflow_dispatch": null,
@@ -3407,6 +3369,26 @@
                 "api_toolchain_targets": "${{ matrix.api_toolchain_targets || '[\"api\", \"openapi-drift\"]' }}",
                 "post_test_command": "${{ matrix.post_test_command || '' }}"
               }
+            },
+            "verification_ready": {
+              "name": "verification-ready",
+              "if": "${{ always() }}",
+              "needs": [
+                "repository",
+                "package"
+              ],
+              "runs-on": "ubuntu-latest",
+              "steps": [
+                {
+                  "name": "Require repository and package verification success",
+                  "shell": "bash",
+                  "env": {
+                    "REPOSITORY_RESULT": "${{ needs.repository.result }}",
+                    "PACKAGE_RESULT": "${{ needs.package.result }}"
+                  },
+                  "run": "set -euo pipefail\n[[ \"${REPOSITORY_RESULT}\" == \"success\" ]] || exit 1\n[[ \"${PACKAGE_RESULT}\" == \"success\" ]] || exit 1\n"
+                }
+              ]
             }
           }
         }
@@ -3420,7 +3402,17 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c"
+      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c",
+      "additional_required_status_checks": [
+        {
+          "context": "verification-ready",
+          "workflow": "repo / verify"
+        }
+      ],
+      "workflow_execution_policy": {
+        "schema": 1,
+        "dependency_pull_requests": "canonical"
+      }
     },
     {
       "name": "bijux-proteomics",
@@ -3883,39 +3875,11 @@
             "push": {
               "branches": [
                 "main"
-              ],
-              "paths": [
-                ".github/workflows/**",
-                "apis/**",
-                "configs/**",
-                "docs/**",
-                "makes/**",
-                "packages/**",
-                "Makefile",
-                "mkdocs.shared.yml",
-                "mkdocs.yml",
-                "pyproject.toml",
-                "tox.ini",
-                "uv.lock"
               ]
             },
             "pull_request": {
               "branches": [
                 "main"
-              ],
-              "paths": [
-                ".github/workflows/**",
-                "apis/**",
-                "configs/**",
-                "docs/**",
-                "makes/**",
-                "packages/**",
-                "Makefile",
-                "mkdocs.shared.yml",
-                "mkdocs.yml",
-                "pyproject.toml",
-                "tox.ini",
-                "uv.lock"
               ]
             },
             "workflow_dispatch": null,
@@ -4034,7 +3998,7 @@
                     "REPOSITORY_RESULT": "${{ needs.repository.result }}",
                     "PACKAGE_RESULT": "${{ needs.package.result }}"
                   },
-                  "run": "set -euo pipefail\n[[ \"${REPOSITORY_RESULT}\" == \"success\" ]]\n[[ \"${PACKAGE_RESULT}\" == \"success\" ]]\n"
+                  "run": "set -euo pipefail\n[[ \"${REPOSITORY_RESULT}\" == \"success\" ]] || exit 1\n[[ \"${PACKAGE_RESULT}\" == \"success\" ]] || exit 1\n"
                 }
               ]
             }
@@ -4050,7 +4014,17 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c"
+      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c",
+      "additional_required_status_checks": [
+        {
+          "context": "verification-ready",
+          "workflow": "repo / verify"
+        }
+      ],
+      "workflow_execution_policy": {
+        "schema": 1,
+        "dependency_pull_requests": "canonical"
+      }
     },
     {
       "name": "bijux-std",

@@ -44,7 +44,10 @@
             "policy / github",
             "policy / pr approval",
             "std / standard",
-            "std / report"
+            "std / report",
+            "iac / contracts",
+            "iac / plan",
+            "iac / governance"
           ]
         }
       }

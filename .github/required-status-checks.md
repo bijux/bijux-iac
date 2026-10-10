@@ -10,6 +10,12 @@ Required branch-protection checks for `main`:
 - `std / standard` (from workflow `bijux-std`)
 - `std / report` (from workflow `bijux-std`)
 
+Repository-specific required checks:
+
+- `iac / contracts` (from workflow `github-governance-plan`)
+- `iac / plan` (from workflow `github-governance-plan`)
+- `iac / governance` (from workflow `github-governance-plan`)
+
 Notes:
 
 - Treat these four checks as the baseline for all governed repos in the unified contract.

@@ -33,6 +33,20 @@ class GovernanceContractTests(unittest.TestCase):
             {"foundation": 2, "hubs": 2, "rust": 4, "python": 4},
         )
 
+    def test_inventory_checks_match_accepted_standards_for_every_repository(self) -> None:
+        import json
+        manifest = json.loads((ROOT / ".github/standards/repo-config.manifest.json").read_text())
+        base_ruleset = json.loads((ROOT / ".bijux/shared/bijux-gh/rulesets/main-branch-protection.json").read_text())
+        required = next(rule for rule in base_ruleset["rules"] if rule["type"] == "required_status_checks")
+        baseline = {check["context"] for check in required["parameters"]["required_status_checks"]}
+        standards = {repo["name"]: repo for repo in manifest["repositories"]}
+        for name, repository in self.repositories.items():
+            with self.subTest(repository=name):
+                expected = baseline | {check["context"] for check in standards[name].get("additional_required_status_checks", [])}
+                self.assertEqual(set(repository["governance"]["branch_protection"]["required_status_checks"]), expected)
+        self.assertTrue({"iac / contracts", "iac / plan", "iac / governance"}.issubset(
+            self.repositories["bijux-iac"]["governance"]["branch_protection"]["required_status_checks"]))
+
     def test_genomics_is_the_only_planned_product_delivery(self) -> None:
         planned = {
             name
