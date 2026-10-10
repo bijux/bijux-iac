@@ -76,6 +76,10 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Record the immutable operation before credential creation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -m scripts.execution.publication validate
       - name: Mint a token scoped to the selected repository
         id: controller
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0

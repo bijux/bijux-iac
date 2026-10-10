@@ -117,6 +117,10 @@ def main() -> None:
             raise ValueError("publication operation must be explicit")
         require_accepted_main()
         validate_request(validated_inventory(), *values)
+        write_receipt({"status": "operation-not-completed", "operation": os.environ["PUBLICATION_OPERATION"],
+                       "repository": values[0], "workflow": values[1], "commit": values[2], "tag": values[3],
+                       "controller_commit": os.environ["GITHUB_SHA"], "controller_run": os.environ["GITHUB_RUN_ID"],
+                       "remote_writes": False})
     else:
         {"verify-credential": verify_credential, "preflight": preflight, "dispatch": dispatch}[args.operation](*values)
 

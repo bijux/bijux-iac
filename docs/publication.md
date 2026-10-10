@@ -79,6 +79,9 @@ Only dispatch the accepted `publication-control.yml` on IaC `main`, specifying
 target commit, and required Contents, Checks, Actions, and Variables reads.
 This operation tests key/token creation and read access; it does not test a
 write API or require consumer trust to have been configured yet.
+The execution job records immutable inputs before creating the token, so a
+missing installation or invalid key still retains an incomplete-operation
+receipt without implying credential verification or publication succeeded.
 
 The default `preflight` operation verifies the complete publication request and
 retains an admission receipt without dispatching. Only the explicit `dispatch`
