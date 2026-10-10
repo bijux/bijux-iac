@@ -6,8 +6,11 @@ the family's applicable documentation deployments and releases. Merging to
 automatic.
 
 The accepted `bijux-std` manifest owns which canonical publishers each repository
-supports. IaC uses that declaration together with inventory delivery state;
-planned or inapplicable surfaces cannot be dispatched. A request selects a full
+supports. Every family member must declare its publication capability, including
+explicit empty capabilities for the two publisher-free foundations. Missing
+policy is an inventory error, never permission to publish. IaC uses that
+declaration together with inventory delivery state; planned or inapplicable
+surfaces cannot be dispatched. A request selects a full
 40-character current target `main` commit. Releases also require an existing
 version tag resolving to exactly that commit. Documentation requests use no tag.
 

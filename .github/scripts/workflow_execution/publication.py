@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 from .events import normalize_workflow_events
-from .schema import WorkflowExecutionPolicy
+from .schema import PUBLICATION_ENTRYPOINTS, WorkflowExecutionPolicy
 from .refs import project_publication_refs
 
 
@@ -15,7 +15,7 @@ def manual_publication_entrypoints(policy: WorkflowExecutionPolicy | None) -> se
 
 
 def requires_publication_projection(policy: WorkflowExecutionPolicy | None) -> bool:
-    return bool(manual_publication_entrypoints(policy))
+    return bool(manual_publication_entrypoints(policy)) or (policy is not None and policy.get("publication_entrypoints") == {})
 
 
 def project_publication_entrypoints(workflow_id: str, document: dict, policy: WorkflowExecutionPolicy | None) -> dict:
@@ -36,9 +36,11 @@ def project_publication_entrypoints(workflow_id: str, document: dict, policy: Wo
 
 def validate_publication_calls(documents: dict[str, dict], policy: WorkflowExecutionPolicy | None) -> None:
     manual = manual_publication_entrypoints(policy)
-    if not manual:
+    no_publishers = policy is not None and policy.get("publication_entrypoints") == {}
+    if not manual and not no_publishers:
         return
-    forbidden = {f"./.github/workflows/{identity}.yml" for identity in manual}
+    forbidden_entrypoints = PUBLICATION_ENTRYPOINTS if no_publishers else manual
+    forbidden = {f"./.github/workflows/{identity}.yml" for identity in forbidden_entrypoints}
     for path, document in documents.items():
         jobs = document.get("jobs")
         if not isinstance(jobs, dict):
@@ -51,9 +53,9 @@ def validate_publication_calls(documents: dict[str, dict], policy: WorkflowExecu
                 raise ValueError(f"{path} caller job {identity} uses must be a workflow reference")
             if isinstance(target, str):
                 reference = target.strip().split("@", 1)[0]
-                if reference in forbidden or reference.rsplit("/", 1)[-1] in {name + ".yml" for name in manual}:
+                if reference in forbidden or reference.rsplit("/", 1)[-1] in {name + ".yml" for name in forbidden_entrypoints}:
                     raise ValueError(f"{path} job {identity} calls manual-only publication entrypoint {target}")
-            controlled = any(entry.get("controller") == "iac" for entry in (policy or {}).get("publication_entrypoints", {}).values())
+            controlled = no_publishers or any(entry.get("controller") == "iac" for entry in (policy or {}).get("publication_entrypoints", {}).values())
             basename = path.rsplit("/", 1)[-1]
             if controlled and external_publisher(job) and basename not in {name + ".yml" for name in manual}:
                 raise ValueError(f"{path} contains a renamed publisher outside canonical manual entrypoints")

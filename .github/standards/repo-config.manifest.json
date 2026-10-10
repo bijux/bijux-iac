@@ -2366,7 +2366,11 @@
           "context": "iac / governance",
           "workflow": "github-governance-plan"
         }
-      ]
+      ],
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {}
+      }
     },
     {
       "name": "bijux-masterclass",
@@ -4223,7 +4227,11 @@
         "github-policy",
         "pr-approval-policy"
       ],
-      "pinned_std_sha": "5da4225aedcfc2af92bb431875243fa2db2b0ce9"
+      "pinned_std_sha": "5da4225aedcfc2af92bb431875243fa2db2b0ce9",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {}
+      }
     },
     {
       "name": "bijux-gnss",
