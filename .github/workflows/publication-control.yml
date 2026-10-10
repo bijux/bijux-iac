@@ -3,6 +3,12 @@ name: publication-control
 on:
   workflow_dispatch:
     inputs:
+      operation:
+        description: Verify App access, retain a read-only preflight, or explicitly dispatch publication
+        type: choice
+        default: preflight
+        required: true
+        options: [verify-credential, preflight, dispatch]
       repository:
         description: Canonical Bijux repository name
         type: string
@@ -29,6 +35,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  PUBLICATION_OPERATION: ${{ inputs.operation }}
   PUBLICATION_TARGET_REPOSITORY: ${{ inputs.repository }}
   PUBLICATION_TARGET_WORKFLOW: ${{ inputs.workflow }}
   PUBLICATION_TARGET_COMMIT: ${{ inputs.commit }}
@@ -59,7 +66,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 -m scripts.execution.publication validate
 
-  dispatch:
+  execution:
     needs: admission
     environment: publication-control
     runs-on: ubuntu-latest
@@ -78,16 +85,17 @@ jobs:
           owner: bijux
           repositories: ${{ inputs.repository }}
       - name: Setup the accepted structural workflow parser
+        if: ${{ inputs.operation != 'verify-credential' }}
         uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83
         with:
           ruby-version: '3.3.12'
-      - name: Verify target policy, immutable source, and required checks, then dispatch
+      - name: Run the selected credential check, preflight, or explicit dispatch
         env:
           GH_TOKEN: ${{ steps.controller.outputs.token }}
           PUBLICATION_APP_ID: ${{ vars.BIJUX_PUBLICATION_APP_ID }}
           PUBLICATION_CONTROLLER_ACTOR: ${{ vars.BIJUX_PUBLICATION_ACTOR }}
           PUBLICATION_CONTROLLER_ACTOR_ID: ${{ vars.BIJUX_PUBLICATION_ACTOR_ID }}
-        run: python3 -m scripts.execution.publication dispatch
+        run: python3 -m scripts.execution.publication "$PUBLICATION_OPERATION"
       - name: Retain immutable publication request receipt
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

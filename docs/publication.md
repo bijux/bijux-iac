@@ -74,8 +74,19 @@ repository mismatches before failing and retains
 `artifacts/publication/audit.json`. It performs no dispatch or remote write.
 
 Only dispatch the accepted `publication-control.yml` on IaC `main`, specifying
-`repository`, `workflow`, `commit`, and the release tag when applicable. The
-unprivileged admission job rejects a feature ref or invalid capability before
+`repository`, `workflow`, `commit`, and the release tag when applicable. Choose
+`verify-credential` to test the selected installation, App identity, current
+target commit, and required Contents, Checks, Actions, and Variables reads.
+This operation tests key/token creation and read access; it does not test a
+write API or require consumer trust to have been configured yet.
+
+The default `preflight` operation verifies the complete publication request and
+retains an admission receipt without dispatching. Only the explicit `dispatch`
+operation sends a publication request. All operations use accepted main and
+the selected-repository token boundary. Credential verification covers the
+selected installation; it does not establish access to other repositories.
+
+The unprivileged admission job rejects a feature ref or invalid capability before
 entering the credential environment. The controller then verifies the App's
 identity and exact permissions, consumer admission, current accepted target,
 tag resolution, and all effective required commit checks from GitHub Actions.
