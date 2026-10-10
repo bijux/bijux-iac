@@ -1,7 +1,7 @@
 # bijux-iac
 
 `bijux-iac` is the live GitHub governance control plane for the Bijux
-repository family. It turns a reviewed repository inventory into organization
+repository family. It turns a reviewed repository inventory into repository
 settings and `main` branch rulesets, then audits GitHub to prove that the
 declared policy is active.
 
@@ -38,6 +38,7 @@ set before an apply can run.
 | --- | --- | --- |
 | Live GitHub settings and rulesets | `bijux-iac` | Visibility, features, merge policy, branch deletion, sign-off policy, and `main` protection |
 | Shared repository standards | `bijux-std` | Managed Make libraries, GitHub workflow sources, checks, documentation shell, generators, and checksums |
+| Manual publication requests | `bijux-iac` | Authenticated exact-commit dispatch to applicable consumer publishers |
 | Product behavior | Product repository | Domain code, package metadata, tests, release inputs, and product documentation |
 | Portfolio website | `bijux.github.io` | Public landing site and links to published project documentation |
 
@@ -92,7 +93,7 @@ option writes the canonical family order and formatting.
 | [`scripts/inventory/`](scripts/inventory) | Family identity, canonical inventory formatting, and closed policy validation |
 | [`scripts/github/`](scripts/github) | API reads, complete live audit, and bounded repository settings writes |
 | [`scripts/terraform/`](scripts/terraform) | Deterministic ruleset inputs and authoritative imports |
-| [`scripts/execution/`](scripts/execution) | Accepted-main preflight and application of the bound plan |
+| [`scripts/execution/`](scripts/execution) | Accepted-main governance application and authenticated manual publication dispatch |
 | [`infra/github/repository-rulesets/`](infra/github/repository-rulesets) | Locked Terraform module for the family’s main rulesets |
 | [`tests/`](tests) | Offline contracts grouped by the same inventory, GitHub, Terraform, and execution boundaries |
 | [`makes/`](makes) | Repository-owned composition of shared Make foundations |
@@ -234,6 +235,14 @@ members, missing required checks, unsupported delivery states, malformed
 settings, generated-input drift, failed imports, or live audit differences.
 Fix the declared source or the live control plane; do not weaken a check to
 hide the mismatch.
+
+## Manual Publication
+
+[Publication control](docs/publication.md) documents the dedicated App,
+main-only credential environment, applicable publisher declarations, immutable
+requests, and complete read-only consumer audit. Repository merges never request
+publication. Consumers admit only the configured App identity on the exact
+accepted commit after required commit checks succeed.
 
 ## License
 

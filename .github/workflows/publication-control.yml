@@ -1,0 +1,97 @@
+name: publication-control
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Canonical Bijux repository name
+        type: string
+        required: true
+      workflow:
+        description: Applicable publisher
+        type: choice
+        required: true
+        options: [deploy-docs, release-github, release-ghcr, release-crates, release-pypi]
+      commit:
+        description: Immutable accepted target main commit
+        type: string
+        required: true
+      release_tag:
+        description: Existing version tag resolving to that commit for releases
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publication-${{ inputs.repository }}-${{ inputs.workflow }}
+  cancel-in-progress: false
+
+env:
+  PUBLICATION_TARGET_REPOSITORY: ${{ inputs.repository }}
+  PUBLICATION_TARGET_WORKFLOW: ${{ inputs.workflow }}
+  PUBLICATION_TARGET_COMMIT: ${{ inputs.commit }}
+  PUBLICATION_TARGET_TAG: ${{ inputs.release_tag }}
+  PYTHONPYCACHEPREFIX: ${{ github.workspace }}/artifacts/python/pycache
+
+jobs:
+  admission:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require accepted protected IaC main before entering the credential environment
+        env:
+          APPLY_EVENT: ${{ github.event_name }}
+          APPLY_REF: ${{ github.ref }}
+          APPLY_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          [[ "$APPLY_EVENT" == "workflow_dispatch" ]] || exit 1
+          [[ "$APPLY_REF" == "refs/heads/main" ]] || exit 1
+          [[ "$APPLY_REPOSITORY" == "bijux/bijux-iac" ]] || exit 1
+      - name: Checkout immutable controller input
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Validate the canonical request before credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -m scripts.execution.publication validate
+
+  dispatch:
+    needs: admission
+    environment: publication-control
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout accepted controller commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Mint a token scoped to the selected repository
+        id: controller
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.BIJUX_PUBLICATION_APP_ID }}
+          private-key: ${{ secrets.BIJUX_PUBLICATION_APP_PRIVATE_KEY }}
+          owner: bijux
+          repositories: ${{ inputs.repository }}
+      - name: Setup the accepted structural workflow parser
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83
+        with:
+          ruby-version: '3.3.12'
+      - name: Verify target policy, immutable source, and required checks, then dispatch
+        env:
+          GH_TOKEN: ${{ steps.controller.outputs.token }}
+          PUBLICATION_APP_ID: ${{ vars.BIJUX_PUBLICATION_APP_ID }}
+          PUBLICATION_CONTROLLER_ACTOR: ${{ vars.BIJUX_PUBLICATION_ACTOR }}
+          PUBLICATION_CONTROLLER_ACTOR_ID: ${{ vars.BIJUX_PUBLICATION_ACTOR_ID }}
+        run: python3 -m scripts.execution.publication dispatch
+      - name: Retain immutable publication request receipt
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: publication-request
+          path: artifacts/publication/request.json
+          if-no-files-found: error

@@ -1,0 +1,91 @@
+# Manual publication control
+
+The `publication-control` workflow in `bijux-iac` is the manual entry point for
+the family's applicable documentation deployments and releases. Merging to
+`main` never requests publication. Build, test, and CI artifact workflows remain
+automatic.
+
+The accepted `bijux-std` manifest owns which canonical publishers each repository
+supports. IaC uses that declaration together with inventory delivery state;
+planned or inapplicable surfaces cannot be dispatched. A request selects a full
+40-character current target `main` commit. Releases also require an existing
+version tag resolving to exactly that commit. Documentation requests use no tag.
+
+## Configure the dedicated GitHub App
+
+This is an automation identity, not another repository. Sign in to the personal
+`bijux` account, then open **Settings → Developer settings → GitHub Apps → New
+GitHub App** at <https://github.com/settings/apps/new>:
+
+1. Name: **bijux-publication**. Homepage: `https://github.com/bijux/bijux-iac`.
+2. Disable **Active** under Webhook. No webhook URL or subscribed events are
+   needed. Keep user authorization and OAuth callbacks disabled.
+3. Set repository permissions to exactly **Actions: read and write**,
+   **Contents: read-only**, **Checks: read-only**, **Variables: read-only**, and
+   **Metadata: read-only**. Leave other repository and organization permissions
+   unset. No organization permissions are needed. The controller rejects
+   additional permissions.
+4. Permit installation only on the owning account. Create the App, record its
+   numeric **App ID**, and generate a private key. Never commit the key or put it
+   in a pull request, receipt, or chat.
+5. Install it only on the governed repositories with applicable publishers.
+   Foundations need no installation. The token action further restricts each
+   installation token to the one selected repository. Genomics cannot be
+   dispatched while its delivery remains planned.
+6. Find the bot's numeric identity with
+   `gh api 'users/bijux-publication[bot]' --jq .id`. This is the **bot user ID**,
+   not the App ID or installation ID.
+
+In `bijux-iac`, create the **publication-control** environment:
+
+- Select deployment branches/tags; add only the branch `main`, with no tags.
+- Disable administrator bypass of protection rules. Keep the existing owner
+  review model; this configuration adds no additional reviewer requirement.
+- Add environment variables `BIJUX_PUBLICATION_APP_ID` (App ID),
+  `BIJUX_PUBLICATION_ACTOR` (`bijux-publication[bot]`), and
+  `BIJUX_PUBLICATION_ACTOR_ID` (bot user ID).
+- Add the environment secret `BIJUX_PUBLICATION_APP_PRIVATE_KEY` using the
+  downloaded key. Keep this key out of repository and organization secrets.
+
+Each applicable consumer must first accept the exact shared standards projection
+with manual dispatch, immutable inputs, and its credential-free admission job.
+Then configure the repository variable `BIJUX_PUBLICATION_ACTOR_ID` to the same
+bot user ID. Accepting source code and setting trust configuration are distinct
+operations; an absent variable intentionally rejects publication.
+
+The App needs Actions write to dispatch, Contents and Checks read to inspect the
+accepted target and its checks, and Variables read to inspect consumer trust.
+It does not receive repository administration, package publication, release,
+or consumer deployment credentials. Publication jobs retain their own existing
+credentials, after admission succeeds.
+
+## Verify before a request
+
+Use a read credential with Contents and Variables access and the Ruby structural
+workflow parser available to audit all twelve repositories:
+
+```bash
+python3 -B -m scripts.github.publication --actor-id BOT_USER_ID
+```
+
+The command checks applicable canonical entry points, automatic or renamed
+publishing callers, admission dependencies, and consumer trust. It reports all
+repository mismatches before failing and retains
+`artifacts/publication/audit.json`. It performs no dispatch or remote write.
+
+Only dispatch the accepted `publication-control.yml` on IaC `main`, specifying
+`repository`, `workflow`, `commit`, and the release tag when applicable. The
+unprivileged admission job rejects a feature ref or invalid capability before
+entering the credential environment. The controller then verifies the App's
+identity and exact permissions, consumer admission, current accepted target,
+tag resolution, and all effective required commit checks from GitHub Actions.
+The PR-only approval check is verified during merge rather than required to
+reappear on the merge commit.
+
+The consumer repeats exact-commit and authenticated bot admission before any
+publisher job can expose publication credentials. A retry repeats admission and
+must retain the requested commit; the controller never silently selects a newer
+commit. `artifacts/publication/request.json` records the controller run and
+commit, target, tag, required checks, identity, and dispatch outcome. A successful
+dispatch receipt proves request acceptance, not successful publication; inspect
+the consumer workflow's final result separately.
