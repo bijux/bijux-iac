@@ -2,6 +2,13 @@ name: github-governance-apply
 
 on:
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Verify credentials, retain a read-only preflight, or explicitly apply its bound plan
+        type: choice
+        default: preflight
+        required: true
+        options: [verify-credential, preflight, apply]
 
 permissions:
   contents: read
@@ -21,15 +28,21 @@ jobs:
           APPLY_EVENT: ${{ github.event_name }}
           APPLY_REF: ${{ github.ref }}
           APPLY_SHA: ${{ github.sha }}
+          APPLY_OPERATION: ${{ inputs.operation }}
         run: |
           set -euo pipefail
           [[ "$APPLY_REPOSITORY" == "bijux/bijux-iac" ]] || exit 1
           [[ "$APPLY_EVENT" == "workflow_dispatch" ]] || exit 1
           [[ "$APPLY_REF" == "refs/heads/main" ]] || exit 1
+          case "$APPLY_OPERATION" in
+            verify-credential|preflight|apply) ;;
+            *) exit 1 ;;
+          esac
           accepted_sha="$(gh api repos/bijux/bijux-iac/commits/main --jq .sha)"
           [[ "$accepted_sha" == "$APPLY_SHA" ]] || exit 1
 
-  apply:
+  execution:
+    name: iac / governance operation
     needs: admission
     environment: governance-apply
     runs-on: ubuntu-latest
@@ -46,14 +59,20 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Verify protected credential access without writes
+        if: ${{ inputs.operation == 'verify-credential' }}
+        run: python3 -m scripts.execution.application verify-credential
       - name: Setup Terraform
+        if: ${{ inputs.operation != 'verify-credential' }}
         uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: 1.16.5
           terraform_wrapper: false
       - name: Complete accepted-main preflight before the first write
+        if: ${{ inputs.operation != 'verify-credential' }}
         run: python3 -m scripts.execution.application preflight
       - name: Apply the bound settings and saved ruleset plan, then audit the family
+        if: ${{ inputs.operation == 'apply' }}
         run: python3 -m scripts.execution.application apply
       - name: Retain application receipt and partial-operation ledger
         if: ${{ always() }}

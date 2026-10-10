@@ -6,6 +6,53 @@ from scripts.inventory.repositories import ROOT, load_inventory, merged_reposito
 
 
 class ApplicationBoundaryTests(unittest.TestCase):
+    def test_credential_verification_reads_the_family_and_never_writes(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        def api(path):
+            if "/rulesets/" in path:
+                return {"bypass_actors": []}
+            return [] if "/pulls?" in path else {"check_runs": []}
+        with patch.object(application, "require_accepted_main"), \
+                patch.object(application, "settings_plan"), \
+                patch.object(application, "list_rulesets", return_value=[{"name": "main-branch-protection", "id": 1}]), \
+                patch.object(application, "gh_api_json", side_effect=api), \
+                patch.object(application, "git_head", return_value="a" * 40), \
+                patch.object(application, "input_digests", return_value={}), \
+                patch.object(application, "write_receipt"), \
+                patch.object(application, "apply_settings") as settings_write, \
+                patch.object(application, "terraform") as terraform:
+            receipt = application.verify_credential()
+        self.assertEqual(len(receipt["credential_access"]), 12)
+        self.assertEqual(receipt["status"], "credential-verified")
+        self.assertIs(receipt["remote_writes"], False)
+        settings_write.assert_not_called()
+        terraform.assert_not_called()
+        with self.assertRaisesRegex(ValueError, "privileged preflight"):
+            application.verify_receipt(receipt)
+
+    def test_missing_administrator_visibility_reports_every_repository(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        with patch.object(application, "require_accepted_main"), \
+                patch.object(application, "settings_plan"), \
+                patch.object(application, "list_rulesets", return_value=[{"name": "main-branch-protection", "id": 1}]), \
+                patch.object(application, "gh_api_json", return_value={}) as api, \
+                patch.object(application, "git_head", return_value="a" * 40), \
+                patch.object(application, "input_digests", return_value={}), \
+                patch.object(application, "write_receipt"):
+            with self.assertRaisesRegex(ValueError, "administration visibility"):
+                application.verify_credential()
+        self.assertEqual(api.call_count, 12)
+
+    def test_workflow_defaults_to_preflight_and_requires_explicit_application(self):
+        workflow = (ROOT / ".github/workflows/github-governance-apply.yml").read_text()
+        self.assertIn("default: preflight", workflow)
+        self.assertIn("if: ${{ inputs.operation == 'apply' }}", workflow)
+        self.assertIn('case "$APPLY_OPERATION" in', workflow)
+        self.assertIn("verify-credential|preflight|apply)", workflow)
+        self.assertLess(workflow.index('case "$APPLY_OPERATION" in'), workflow.index("environment: governance-apply"))
+
     def test_unaccepted_dispatches_fail_before_api_reads(self):
         from unittest.mock import patch
         from scripts.execution.application import require_main

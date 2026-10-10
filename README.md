@@ -205,6 +205,14 @@ name and retire the repository copy after verifying the replacement. GitHub
 cannot reveal an existing secret value; an administrator must enter its value
 through GitHub settings or `gh secret set --env governance-apply`.
 
+The manual governance workflow defaults to `preflight`, which retains a plan
+without applying it. Choose `verify-credential` to check complete repository
+settings visibility, ruleset administrator visibility, and check/PR reads across
+the exact family without Terraform or remote writes. Its receipt is never
+application-ready. Only the explicit `apply` choice performs remote changes
+after a fresh accepted-main preflight. Verify the replacement credential before
+retiring a repository-level administrator secret; keep its value out of logs.
+
 PR planning uses only the workflow's read-only GitHub token. Public metadata and
 ruleset reads suffice for the read-only ruleset plan. The PR receipt explicitly
 records settings withheld from readers; it cannot authorize application.
