@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
+from collections import Counter
 from pathlib import Path
 
 
@@ -26,8 +27,11 @@ class GovernanceContractTests(unittest.TestCase):
 
     def test_inventory_covers_the_complete_bijux_family(self) -> None:
         self.assertEqual(set(self.repositories), set(FAMILY_REPOSITORIES))
-        self.assertIn("bijux-gnss", self.repositories)
-        self.assertNotIn("bijux-telecom", self.repositories)
+        self.assertEqual(len(self.repositories), 12)
+        self.assertEqual(
+            Counter(repository["class"] for repository in self.repositories.values()),
+            {"foundation": 2, "hubs": 2, "rust": 4, "python": 4},
+        )
 
     def test_genomics_is_the_only_planned_product_delivery(self) -> None:
         planned = {

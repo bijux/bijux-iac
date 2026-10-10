@@ -48,7 +48,8 @@ must be refreshed through the standards tooling, not edited locally.
 
 ## Governed Family
 
-The inventory contains the complete twelve-repository family. Delivery state is
+The inventory contains exactly twelve repositories: two foundations, two hubs,
+four Rust products, and four Python products. Delivery state is
 operational metadata: `published` means the public surface exists,
 `planned` means it is deliberately not yet published, and `not-applicable`
 means that repository does not own the surface.
@@ -57,8 +58,8 @@ means that repository does not own the surface.
 | --- | --- | --- | --- | --- |
 | `bijux-iac` | GitHub control plane | Terraform | Not applicable | Not applicable |
 | `bijux-std` | Shared standards control plane | Make | Not applicable | Not applicable |
-| `bijux.github.io` | Portfolio website | Docs | Published | Not applicable |
-| `bijux-masterclass` | Course website | Docs | Published | Not applicable |
+| `bijux.github.io` | Documentation hub | Docs | Published | Not applicable |
+| `bijux-masterclass` | Learning hub | Docs | Published | Not applicable |
 | `bijux-canon` | Product | Python | Published | Published |
 | `bijux-proteomics` | Product | Python | Published | Published |
 | `bijux-pollenomics` | Product | Python | Published | Published |

@@ -8,7 +8,7 @@ from repository_inventory import (
 )
 
 
-ALLOWED_CLASSES = {"foundation", "web-course", "python", "rust"}
+ALLOWED_CLASSES = {"foundation", "hubs", "python", "rust"}
 ALLOWED_DELIVERY_STATES = {"not-applicable", "planned", "published"}
 ALLOWED_ENGINES = {"branch_protection", "ruleset"}
 ALLOWED_VISIBILITIES = {"public", "private"}

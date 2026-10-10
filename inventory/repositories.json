@@ -4,8 +4,8 @@
     "foundation": {
       "description": "Control-plane repositories for governance and shared standards."
     },
-    "web-course": {
-      "description": "Website and course delivery repositories."
+    "hubs": {
+      "description": "Documentation and learning hubs for the Bijux family."
     },
     "python": {
       "description": "Python-first product repositories."
@@ -74,7 +74,7 @@
     },
     {
       "name": "bijux.github.io",
-      "class": "web-course",
+      "class": "hubs",
       "stack": "docs",
       "delivery": {
         "documentation": "published",
@@ -97,7 +97,7 @@
     },
     {
       "name": "bijux-masterclass",
-      "class": "web-course",
+      "class": "hubs",
       "stack": "docs",
       "delivery": {
         "documentation": "published",
