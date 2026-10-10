@@ -6,6 +6,34 @@ from scripts.inventory.repositories import ROOT, load_inventory, merged_reposito
 
 
 class ApplicationBoundaryTests(unittest.TestCase):
+    def test_stopped_preflight_retains_attempted_commit_and_digests_without_writes(self):
+        import copy
+        import json
+        from unittest.mock import patch
+        from scripts.execution import application
+        receipts = []
+        def retain(receipt):
+            receipts.append(copy.deepcopy(receipt))
+        with patch("sys.argv", ["application", "preflight"]), \
+                patch.object(application, "git_head", return_value="a" * 40), \
+                patch.object(application, "input_digests", return_value={"inventory": "input-digest"}), \
+                patch.object(application, "write_receipt", side_effect=retain), \
+                patch.object(application, "PLAN") as plan, \
+                patch.object(application, "RECEIPT") as receipt, \
+                patch.object(application, "preflight", side_effect=ValueError("missing accepted producer")), \
+                patch.object(application, "apply_settings") as settings_write, \
+                patch.object(application, "terraform") as terraform:
+            plan.exists.return_value = False
+            receipt.read_text.side_effect = lambda: json.dumps(receipts[-1])
+            with self.assertRaisesRegex(ValueError, "missing accepted producer"):
+                application.main()
+        self.assertEqual(receipts[-1]["status"], "preflight-failed")
+        self.assertEqual(receipts[-1]["commit"], "a" * 40)
+        self.assertEqual(receipts[-1]["input_digests"], {"inventory": "input-digest"})
+        self.assertIs(receipts[-1]["remote_writes"], False)
+        settings_write.assert_not_called()
+        terraform.assert_not_called()
+
     def test_credential_verification_reads_the_family_and_never_writes(self):
         from unittest.mock import patch
         from scripts.execution import application
