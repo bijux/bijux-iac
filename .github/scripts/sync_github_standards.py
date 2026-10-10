@@ -254,6 +254,10 @@ def prepare_runtime_workflows(repo_config: dict[str, Any], manifest: dict[str, A
                 if path.suffix in {".yml", ".yaml"} and relative not in owned:
                     documents[relative] = WORKFLOW_EXECUTION.parse_workflow(path.read_bytes(), relative)
     WORKFLOW_EXECUTION.validate_publication_calls(documents, policy)
+    if policy.get("publication_entrypoints") == {} and not (WORKFLOW_EXECUTION.requires_event_projection(policy) or WORKFLOW_EXECUTION.requires_dependency_projection(policy)):
+        # An explicitly publisher-free repository still admits authored callers.
+        # Its unmodified canonical workflows retain their source bytes.
+        return {}
     return prepared
 
 
