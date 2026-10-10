@@ -247,7 +247,7 @@ def render_required_status_ruleset(repo: dict[str, Any]) -> str:
     existing = {check["context"] for check in configured}
     for check in additional_required_status_checks(repo):
         if check["context"] not in existing:
-            configured.append({"context": check["context"]})
+            configured.append({"context": check["context"], "integration_id": 15368})
             existing.add(check["context"])
     return json.dumps(ruleset, indent=2) + "\n"
 
@@ -444,7 +444,7 @@ def prepare_repo_files(repo_name: str, manifest: dict) -> dict[str, bytes | None
         if definition is None:
             prepared[path] = None
             continue
-        if not WORKFLOW_EXECUTION.requires_dependency_projection(policy):
+        if not WORKFLOW_EXECUTION.requires_dependency_projection(policy) and (policy or {}).get("dependency_pull_requests") != "canonical":
             definition = inject_dependabot_pull_request_skip(name, definition)
         definition = normalize_workflow_wrapper(name, definition)
         prepared[path] = render_yaml_document(
