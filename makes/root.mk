@@ -12,8 +12,9 @@ BIJUX_LINT_TARGETS += contract-tests terraform-validate
 BIJUX_TEST_TARGETS += contract-tests
 BIJUX_DOCTOR_TARGETS += repository-tools
 BIJUX_CI_PR_TARGETS += fmt lint test bijux-std-checks
-BIJUX_HELP_TARGETS += live-audit
+BIJUX_HELP_TARGETS += live-audit producer-audit
 BIJUX_HELP_live-audit := Compare inventory with live GitHub governance
+BIJUX_HELP_producer-audit := Verify accepted required-check producers without writes
 
 BIJUX_MAKE_COMPONENTS :=
 include $(CURDIR)/.bijux/shared/bijux-makes/bijux.mk
@@ -22,6 +23,7 @@ include $(CURDIR)/.bijux/shared/bijux-makes/bijux.mk
 	contract-tests \
 	inventory-check \
 	live-audit \
+	producer-audit \
 	python-syntax-check \
 	repository-tools \
 	terraform-format-check \
@@ -50,6 +52,10 @@ python-syntax-check: ## Compile repository-owned Python without source-tree cach
 live-audit: ## Compare inventory with live GitHub governance
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
 		python3 -m scripts.github.audit
+
+producer-audit: ## Retain accepted required-check producer evidence without writes
+	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
+		python3 -m scripts.github.checks
 
 terraform-format-check: ## Verify Terraform source formatting
 	@terraform -chdir="$(TERRAFORM_ROOT)" fmt -check -recursive
