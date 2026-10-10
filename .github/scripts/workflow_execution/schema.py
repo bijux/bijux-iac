@@ -9,6 +9,7 @@ from typing import Any, Literal, TypedDict
 class PublicationEntrypoint(TypedDict, total=False):
     mode: Literal["canonical", "manual-only"]
     refs: Literal["canonical", "main-only"]
+    controller: Literal["iac"]
 
 
 class WorkflowExecutionPolicy(TypedDict, total=False):
@@ -19,7 +20,7 @@ class WorkflowExecutionPolicy(TypedDict, total=False):
 
 
 PUBLICATION_ENTRYPOINTS = frozenset(
-    {"deploy-docs", "release-github", "release-ghcr", "release-crates"}
+    {"deploy-docs", "release-github", "release-ghcr", "release-crates", "release-pypi"}
 )
 
 
@@ -98,8 +99,12 @@ def validate_policy(repository: dict, known_workflows: set[str]) -> WorkflowExec
         for identity, entry in publication.items():
             if identity not in known_workflows or identity not in allowlist:
                 raise ValueError(f"publication entrypoint {identity} is not an enabled managed workflow")
-            entry = require_closed_object(entry, {"mode", "refs"} if identity == "deploy-docs" else {"mode"}, identity)
+            entry = require_closed_object(entry, {"mode", "refs", "controller"} if identity == "deploy-docs" else {"mode", "controller"}, identity)
             _choice(entry.get("mode"), {"canonical", "manual-only"}, f"{identity}.mode")
+            if "controller" in entry:
+                _choice(entry["controller"], {"iac"}, f"{identity}.controller")
+                if entry["mode"] != "manual-only":
+                    raise ValueError("IaC controller requires manual-only publication")
             if "refs" in entry:
                 _choice(entry["refs"], {"canonical", "main-only"}, f"{identity}.refs")
                 if entry["refs"] == "main-only" and entry["mode"] != "manual-only":
