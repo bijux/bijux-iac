@@ -70,9 +70,10 @@ def validate_delivery(name: str, delivery: object) -> None:
             )
 
 
-def main() -> None:
-    inventory = load_inventory()
-    if inventory.get("version") != 2:
+def validate_inventory(inventory: object) -> None:
+    if not isinstance(inventory, dict):
+        fail("inventory must be an object")
+    if type(inventory.get("version")) is not int or inventory["version"] != 2:
         fail("inventory version must be 2")
 
     classes = inventory.get("classes")
@@ -137,17 +138,23 @@ def main() -> None:
         branch = governance.get("branch_protection")
         if not isinstance(branch, dict):
             fail(f"{name}: missing branch_protection object")
-        if not isinstance(branch.get("enabled"), bool):
-            fail(f"{name}: branch_protection.enabled must be bool")
-        if branch.get("engine") not in ALLOWED_ENGINES:
+        if branch.get("enabled") is not True:
+            fail(f"{name}: branch protection must be enabled")
+        if branch.get("engine") != "ruleset":
             fail(
                 f"{name}: branch_protection.engine must be one of "
-                f"{sorted(ALLOWED_ENGINES)}"
+                "['ruleset']"
             )
-        if not isinstance(branch.get("required_approving_review_count"), int):
+        if type(branch.get("required_approving_review_count")) is not int:
             fail(f"{name}: branch_protection.required_approving_review_count must be int")
         if not isinstance(branch.get("enforce_admins"), bool):
             fail(f"{name}: branch_protection.enforce_admins must be bool")
+        allowed_branch_keys = {
+            "enabled", "engine", "required_approving_review_count", "enforce_admins",
+            "required_status_checks",
+        }
+        if set(branch) != allowed_branch_keys:
+            fail(f"{name}: branch protection keys must be {sorted(allowed_branch_keys)}")
         required_status_checks = branch.get("required_status_checks")
         if not isinstance(required_status_checks, list):
             fail(f"{name}: branch_protection.required_status_checks must be list")
@@ -172,7 +179,10 @@ def main() -> None:
     if missing_repositories:
         fail(f"missing governed repositories: {sorted(missing_repositories)}")
 
-    print(f"inventory: OK ({len(repositories)} repositories)")
+def main() -> None:
+    inventory = load_inventory()
+    validate_inventory(inventory)
+    print(f"inventory: OK ({len(inventory['repositories'])} repositories)")
 
 
 if __name__ == "__main__":

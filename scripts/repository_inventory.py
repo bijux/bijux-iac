@@ -43,3 +43,16 @@ def merged_repository_settings(
         **inventory["repository_settings_defaults"],
         **repository.get("settings", {}),
     }
+
+
+def validated_inventory() -> dict[str, Any]:
+    from validate_repo_inventory import validate_inventory
+
+    inventory = load_inventory()
+    validate_inventory(inventory)
+    return inventory
+
+
+def validate_owner(owner: str) -> None:
+    if owner != "bijux":
+        raise SystemExit("governance owner must be bijux")

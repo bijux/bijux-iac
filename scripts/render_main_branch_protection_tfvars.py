@@ -5,6 +5,8 @@ import argparse
 import json
 from pathlib import Path
 
+from repository_inventory import validated_inventory
+
 
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "inventory/repositories.json"
@@ -12,7 +14,7 @@ TFVARS_PATH = ROOT / "infra/github/main-branch-protection/terraform.auto.tfvars.
 
 
 def render_payload() -> dict:
-    inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
+    inventory = validated_inventory()
     repositories = inventory.get("repositories", [])
 
     legacy_protected: list[str] = []
