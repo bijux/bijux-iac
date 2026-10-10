@@ -211,6 +211,12 @@ def validate_inventory(inventory: object) -> None:
     if missing_repositories:
         fail(f"missing governed repositories: {sorted(missing_repositories)}")
 
+    from scripts.inventory.publication import publisher_declarations
+    try:
+        publisher_declarations(inventory)
+    except ValueError as error:
+        fail(str(error))
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate and format the governed family inventory")
     parser.add_argument("--write", action="store_true", help="write canonical inventory formatting")

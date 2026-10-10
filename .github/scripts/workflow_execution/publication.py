@@ -28,7 +28,10 @@ def project_publication_entrypoints(workflow_id: str, document: dict, policy: Wo
     # Dispatch input/help/default identity and every job remain source-owned.
     events.pop("workflow_call", None)
     projected["on"] = events
-    return project_publication_refs(workflow_id, projected, policy)
+    controlled = (policy or {}).get("publication_entrypoints", {}).get(workflow_id, {}).get("controller") == "iac"
+    if not controlled or "publication_admission" not in projected.get("jobs", {}):
+        projected = project_publication_refs(workflow_id, projected, policy)
+    return project_controller(workflow_id, projected) if controlled else projected
 
 
 def validate_publication_calls(documents: dict[str, dict], policy: WorkflowExecutionPolicy | None) -> None:
@@ -46,5 +49,87 @@ def validate_publication_calls(documents: dict[str, dict], policy: WorkflowExecu
             target = job.get("uses")
             if "uses" in job and (not isinstance(target, str) or not target.strip()):
                 raise ValueError(f"{path} caller job {identity} uses must be a workflow reference")
-            if isinstance(target, str) and target.strip().split("@", 1)[0] in forbidden:
-                raise ValueError(f"{path} job {identity} calls manual-only publication entrypoint {target}")
+            if isinstance(target, str):
+                reference = target.strip().split("@", 1)[0]
+                if reference in forbidden or reference.rsplit("/", 1)[-1] in {name + ".yml" for name in manual}:
+                    raise ValueError(f"{path} job {identity} calls manual-only publication entrypoint {target}")
+            controlled = any(entry.get("controller") == "iac" for entry in (policy or {}).get("publication_entrypoints", {}).values())
+            basename = path.rsplit("/", 1)[-1]
+            if controlled and external_publisher(job) and basename not in {name + ".yml" for name in manual}:
+                raise ValueError(f"{path} contains a renamed publisher outside canonical manual entrypoints")
+
+
+def controller_admission_job(workflow_id: str) -> dict:
+    return {
+        "name": "publication / admission", "runs-on": "ubuntu-latest",
+        "permissions": {"contents": "read", "checks": "read"},
+        "steps": [
+            {"name": "Checkout immutable workflow input", "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+             "with": {"ref": "${{ github.sha }}", "persist-credentials": False}},
+            {"name": "Authorize authenticated exact-commit publication", "env": {
+                "GH_TOKEN": "${{ github.token }}", "PUBLICATION_REPOSITORY": "${{ github.repository }}",
+                "PUBLICATION_EVENT": "${{ github.event_name }}", "PUBLICATION_REF": "${{ github.ref }}",
+                "PUBLICATION_ACTOR": "${{ github.actor }}", "PUBLICATION_ACTOR_ID": "${{ github.actor_id }}",
+                "PUBLICATION_TRIGGERING_ACTOR": "${{ github.triggering_actor }}",
+                "PUBLICATION_CONTROLLER_ACTOR_ID": "${{ vars.BIJUX_PUBLICATION_ACTOR_ID }}",
+                "PUBLICATION_COMMIT": "${{ inputs.accepted_commit }}", "PUBLICATION_RUN_SHA": "${{ github.sha }}",
+                "PUBLICATION_WORKFLOW": workflow_id, "PUBLICATION_TAG": "${{ inputs.release_tag || '' }}",
+                "PYTHONPYCACHEPREFIX": "${{ github.workspace }}/artifacts/python/pycache",
+            }, "run": "python3 .bijux/shared/bijux-gh/scripts/publication_admission.py"},
+        ],
+    }
+
+
+def project_controller(workflow_id: str, document: dict) -> dict:
+    projected = copy.deepcopy(document)
+    admission = controller_admission_job(workflow_id)
+    jobs = projected.get("jobs", {})
+    if "publication_admission" in jobs:
+        if jobs["publication_admission"] != admission:
+            raise ValueError("publication admission differs from its canonical definition")
+        return projected
+    dispatch = projected["on"].get("workflow_dispatch") or {}
+    if not isinstance(dispatch, dict):
+        raise ValueError("controller publication dispatch must be an object")
+    inputs = dispatch.setdefault("inputs", {})
+    inputs["accepted_commit"] = {"description": "Immutable accepted main commit selected by bijux-iac", "type": "string", "required": True}
+    if workflow_id != "deploy-docs":
+        if "release_tag" not in inputs:
+            raise ValueError("controller releases require the canonical release_tag input")
+        inputs["release_tag"]["required"] = True
+    projected["on"]["workflow_dispatch"] = dispatch
+    for name, job in jobs.items():
+        if not isinstance(job, dict):
+            raise ValueError(f"{name}: malformed publisher job")
+        needs = job.get("needs", [])
+        needs = [needs] if isinstance(needs, str) else needs
+        if not isinstance(needs, list) or "publication_admission" in needs:
+            raise ValueError(f"{name}: ambiguous publication admission dependency")
+        job["needs"] = ["publication_admission", *needs]
+        condition = job.get("if", "success()")
+        if not isinstance(condition, str):
+            raise ValueError(f"{name}: malformed publication condition")
+        expression = condition.strip()
+        if expression.startswith("${{") and expression.endswith("}}"):
+            expression = expression[3:-2].strip()
+        job["if"] = "${{ needs.publication_admission.result == 'success' && (" + expression + ") }}"
+    projected["jobs"] = {"publication_admission": admission, **jobs}
+    return projected
+
+
+def external_publisher(job: dict) -> bool:
+    import re
+    for step in job.get("steps", []):
+        if not isinstance(step, dict):
+            raise ValueError("publisher steps must be objects")
+        action = step.get("uses", "").split("@", 1)[0]
+        if action in {"actions/deploy-pages", "pypa/gh-action-pypi-publish", "softprops/action-gh-release"}:
+            return True
+        if action == "docker/build-push-action" and step.get("with", {}).get("push") not in {None, False, "false"}:
+            return True
+        for line in str(step.get("run", "")).splitlines():
+            if line.lstrip().startswith("#") or "--dry-run" in line:
+                continue
+            if re.search(r"(?:^|[;&\s])(?:cargo\s+publish|uv\s+publish|twine\s+upload|docker\s+push|gh\s+release\s+(?:create|upload))\b", line):
+                return True
+    return False

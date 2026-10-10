@@ -469,7 +469,29 @@
         "release-ghcr",
         "release-github"
       ],
-      "pinned_std_sha": "44a77e32edc759e92b95feb63b2988ff90f0ca59"
+      "pinned_std_sha": "44a77e32edc759e92b95feb63b2988ff90f0ca59",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-crates": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
+      }
     },
     {
       "name": "bijux-canon",
@@ -1190,7 +1212,26 @@
       "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c",
       "workflow_execution_policy": {
         "schema": 1,
-        "dependency_pull_requests": "canonical"
+        "dependency_pull_requests": "canonical",
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-pypi": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
       }
     },
     {
@@ -1586,7 +1627,33 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "a44a4e85b09714ce8863c9573ef1059e843b5e8e"
+      "pinned_std_sha": "a44a4e85b09714ce8863c9573ef1059e843b5e8e",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-crates": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-pypi": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
+      }
     },
     {
       "name": "bijux-genomics",
@@ -2267,7 +2334,17 @@
         "github-policy",
         "pr-approval-policy"
       ],
-      "pinned_std_sha": "05d63cd12b4d96afe4b74dbda1cd1e27bee344e5"
+      "pinned_std_sha": "05d63cd12b4d96afe4b74dbda1cd1e27bee344e5",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          }
+        }
+      }
     },
     {
       "name": "bijux-iac",
@@ -2388,7 +2465,17 @@
         "github-policy",
         "pr-approval-policy"
       ],
-      "pinned_std_sha": "5d4059e207559a51ed40dac1384693c57347018f"
+      "pinned_std_sha": "5d4059e207559a51ed40dac1384693c57347018f",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          }
+        }
+      }
     },
     {
       "name": "bijux-phylogenetics",
@@ -2909,7 +2996,29 @@
         "release-github",
         "release-pypi"
       ],
-      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c"
+      "pinned_std_sha": "214f8c6e8881a97a258e57c450badb74a5fb7b5c",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-pypi": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
+      }
     },
     {
       "name": "bijux-pollenomics",
@@ -3411,7 +3520,26 @@
       ],
       "workflow_execution_policy": {
         "schema": 1,
-        "dependency_pull_requests": "canonical"
+        "dependency_pull_requests": "canonical",
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-pypi": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
       }
     },
     {
@@ -4023,7 +4151,26 @@
       ],
       "workflow_execution_policy": {
         "schema": 1,
-        "dependency_pull_requests": "canonical"
+        "dependency_pull_requests": "canonical",
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-pypi": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
       }
     },
     {
@@ -4442,7 +4589,29 @@
         "release-ghcr",
         "release-github"
       ],
-      "pinned_std_sha": "44a77e32edc759e92b95feb63b2988ff90f0ca59"
+      "pinned_std_sha": "44a77e32edc759e92b95feb63b2988ff90f0ca59",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          },
+          "release-crates": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-ghcr": {
+            "mode": "manual-only",
+            "controller": "iac"
+          },
+          "release-github": {
+            "mode": "manual-only",
+            "controller": "iac"
+          }
+        }
+      }
     },
     {
       "name": "bijux.github.io",
@@ -4481,7 +4650,17 @@
         "github-policy",
         "pr-approval-policy"
       ],
-      "pinned_std_sha": "5d4059e207559a51ed40dac1384693c57347018f"
+      "pinned_std_sha": "5d4059e207559a51ed40dac1384693c57347018f",
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only"
+          }
+        }
+      }
     }
   ]
 }

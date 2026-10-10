@@ -273,3 +273,30 @@ authored workflows stay under their owner's admission policy.
 Skipped jobs are an intentional declared policy outcome; they provide no executed
 implementation evidence. This policy changes neither publication authorization
 nor source, deployment, profile or manual qualification requirements.
+
+## Manual publication controlled by IaC
+
+The twelve governed repositories select `manual-only` publication with
+`controller: iac` for each applicable canonical publisher: `release-github`,
+`release-ghcr`, `release-crates`, `release-pypi`, and `deploy-docs`. The projection
+removes automatic and reusable entry points. Validation rejects callers of these
+publishers and recognizable publication steps hidden in other workflows; ordinary
+CI artifact uploads and package dry runs remain available.
+
+Each publisher first runs a read-only admission job before any job with publication
+credentials. Configure the repository variable `BIJUX_PUBLICATION_ACTOR_ID` with
+the numeric ID of the dedicated controller App's bot account. Admission verifies
+the authenticated original and triggering actors, dispatch from `main`, the immutable `accepted_commit`,
+and the latest successful checks from the required GitHub Actions producer. The
+commit must still be current protected `main`; releases additionally require an
+existing `release_tag` resolving to that commit. Missing or unhealthy evidence
+rejects publication. PR-only approval evidence belongs to protected-main
+acceptance rather than a nonexistent push approval run.
+
+`bijux-iac` owns the manual dispatch controller and its environment credentials.
+Its App is limited to the twelve repositories with Actions write, Contents read,
+Checks read, Variables read, and mandatory Metadata read. Each dispatch mints a
+token for only the selected repository. App identity and permissions are checked
+before dispatch; the private key remains in IaC's main-only `publication-control`
+environment. Consumer refresh and live identity configuration must precede use;
+merging this standards source does not perform a release or configure credentials.
