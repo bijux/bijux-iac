@@ -41,7 +41,7 @@ jobs:
           terraform_version: 1.16.5
           terraform_wrapper: false
       - name: Plan repository settings and rulesets without write credentials
-        run: python3 scripts/governance_execution.py plan
+        run: python3 -m scripts.execution.application plan
       - name: Retain governance receipt
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

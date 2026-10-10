@@ -74,14 +74,27 @@ the wrong stack, or given a delivery state that contradicts this contract.
 This makes the `bijux-gnss` identity durable and prevents obsolete repository
 names from re-entering the control plane.
 
+Every entry uses the same `name`, `class`, `stack`, `delivery`, `settings`, and
+`governance` shape, ordered by foundations, hubs, Rust products, and Python
+products. Shared repository settings are declared once in
+`repository_settings_defaults`. An explicit `settings: {}` inherits them;
+nonempty objects declare only real differences. The four existing wiki overrides
+remain visible. Overrides cannot weaken the common visibility, issues, merge,
+branch-deletion, or sign-off contract, and restating a default is rejected.
+Unknown or duplicate keys fail validation. The inventory validator's `--write`
+option writes the canonical family order and formatting.
+
 ## Repository Layout
 
 | Path | Purpose |
 | --- | --- |
 | [`inventory/repositories.json`](inventory/repositories.json) | Authoritative family, settings, delivery state, and ruleset inputs |
-| [`scripts/`](scripts) | Inventory validation, deterministic rendering, settings application, and live audit |
-| [`infra/github/main-branch-protection/`](infra/github/main-branch-protection) | Terraform module for legacy branch protection and current repository rulesets |
-| [`tests/`](tests) | Executable family and rendering contracts |
+| [`scripts/inventory/`](scripts/inventory) | Family identity, canonical inventory formatting, and closed policy validation |
+| [`scripts/github/`](scripts/github) | API reads, complete live audit, and bounded repository settings writes |
+| [`scripts/terraform/`](scripts/terraform) | Deterministic ruleset inputs and authoritative imports |
+| [`scripts/execution/`](scripts/execution) | Accepted-main preflight and application of the bound plan |
+| [`infra/github/repository-rulesets/`](infra/github/repository-rulesets) | Locked Terraform module for the family’s main rulesets |
+| [`tests/`](tests) | Offline contracts grouped by the same inventory, GitHub, Terraform, and execution boundaries |
 | [`makes/`](makes) | Repository-owned composition of shared Make foundations |
 | [`.bijux/shared/`](.bijux/shared) | Generated standards payload selected by capability |
 
@@ -121,7 +134,7 @@ deleting `main`.
 3. If branch policy changed, regenerate the committed input:
 
    ```bash
-   python3 scripts/render_main_branch_protection_tfvars.py --write
+   python3 -B -m scripts.terraform.render --write
    ```
 
 4. Run the repository gates:
@@ -191,6 +204,14 @@ existing `GH_ADMIN_TOKEN` repository secret into the environment under the new
 name and retire the repository copy after verifying the replacement. GitHub
 cannot reveal an existing secret value; an administrator must enter its value
 through GitHub settings or `gh secret set --env governance-apply`.
+
+The manual governance workflow defaults to `preflight`, which retains a plan
+without applying it. Choose `verify-credential` to check complete repository
+settings visibility, ruleset administrator visibility, and check/PR reads across
+the exact family without Terraform or remote writes. Its receipt is never
+application-ready. Only the explicit `apply` choice performs remote changes
+after a fresh accepted-main preflight. Verify the replacement credential before
+retiring a repository-level administrator secret; keep its value out of logs.
 
 PR planning uses only the workflow's read-only GitHub token. Public metadata and
 ruleset reads suffice for the read-only ruleset plan. The PR receipt explicitly

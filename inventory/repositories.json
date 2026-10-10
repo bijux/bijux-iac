@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "classes": {
     "foundation": {
       "description": "Control-plane repositories for governance and shared standards."
@@ -7,11 +7,11 @@
     "hubs": {
       "description": "Documentation and learning hubs for the Bijux family."
     },
-    "python": {
-      "description": "Python-first product repositories."
-    },
     "rust": {
       "description": "Rust-first product repositories."
+    },
+    "python": {
+      "description": "Python-first product repositories."
     }
   },
   "repository_settings_defaults": {
@@ -34,12 +34,12 @@
         "documentation": "not-applicable",
         "packages": "not-applicable"
       },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -60,12 +60,12 @@
         "documentation": "not-applicable",
         "packages": "not-applicable"
       },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -83,12 +83,12 @@
         "documentation": "published",
         "packages": "not-applicable"
       },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -106,159 +106,12 @@
         "documentation": "published",
         "packages": "not-applicable"
       },
+      "settings": {},
       "governance": {
         "branch_protection": {
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
-          "required_status_checks": [
-            "policy / github",
-            "policy / pr approval",
-            "std / standard",
-            "std / report"
-          ]
-        }
-      }
-    },
-    {
-      "name": "bijux-canon",
-      "class": "python",
-      "stack": "python",
-      "delivery": {
-        "documentation": "published",
-        "packages": "published"
-      },
-      "governance": {
-        "branch_protection": {
-          "enabled": true,
-          "engine": "ruleset",
-          "required_approving_review_count": 0,
-          "enforce_admins": false,
-          "required_status_checks": [
-            "policy / github",
-            "policy / pr approval",
-            "std / standard",
-            "std / report",
-            "verification-ready"
-          ]
-        }
-      }
-    },
-    {
-      "name": "bijux-proteomics",
-      "class": "python",
-      "stack": "python",
-      "delivery": {
-        "documentation": "published",
-        "packages": "published"
-      },
-      "governance": {
-        "branch_protection": {
-          "enabled": true,
-          "engine": "ruleset",
-          "required_approving_review_count": 0,
-          "enforce_admins": false,
-          "required_status_checks": [
-            "policy / github",
-            "policy / pr approval",
-            "std / standard",
-            "std / report",
-            "verification-ready"
-          ]
-        }
-      }
-    },
-    {
-      "name": "bijux-pollenomics",
-      "class": "python",
-      "stack": "python",
-      "delivery": {
-        "documentation": "published",
-        "packages": "published"
-      },
-      "governance": {
-        "branch_protection": {
-          "enabled": true,
-          "engine": "ruleset",
-          "required_approving_review_count": 0,
-          "enforce_admins": false,
-          "required_status_checks": [
-            "policy / github",
-            "policy / pr approval",
-            "std / standard",
-            "std / report",
-            "verification-ready"
-          ]
-        }
-      }
-    },
-    {
-      "name": "bijux-core",
-      "class": "rust",
-      "stack": "rust",
-      "delivery": {
-        "documentation": "published",
-        "packages": "published"
-      },
-      "settings": {
-        "has_wiki": false
-      },
-      "governance": {
-        "branch_protection": {
-          "enabled": true,
-          "engine": "ruleset",
-          "required_approving_review_count": 0,
-          "enforce_admins": false,
-          "required_status_checks": [
-            "policy / github",
-            "policy / pr approval",
-            "std / standard",
-            "std / report"
-          ]
-        }
-      }
-    },
-    {
-      "name": "bijux-atlas",
-      "class": "rust",
-      "stack": "rust",
-      "delivery": {
-        "documentation": "published",
-        "packages": "published"
-      },
-      "governance": {
-        "branch_protection": {
-          "enabled": true,
-          "engine": "ruleset",
-          "required_approving_review_count": 0,
-          "enforce_admins": false,
-          "required_status_checks": [
-            "policy / github",
-            "policy / pr approval",
-            "std / standard",
-            "std / report"
-          ]
-        }
-      }
-    },
-    {
-      "name": "bijux-phylogenetics",
-      "class": "python",
-      "stack": "python",
-      "delivery": {
-        "documentation": "published",
-        "packages": "published"
-      },
-      "settings": {
-        "has_wiki": false
-      },
-      "governance": {
-        "branch_protection": {
-          "enabled": true,
-          "engine": "ruleset",
-          "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -284,7 +137,54 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-core",
+      "class": "rust",
+      "stack": "rust",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
+      "settings": {
+        "has_wiki": false
+      },
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-atlas",
+      "class": "rust",
+      "stack": "rust",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
+      "settings": {},
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -310,7 +210,103 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-canon",
+      "class": "python",
+      "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
+      "settings": {},
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "verification-ready"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-pollenomics",
+      "class": "python",
+      "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
+      "settings": {},
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "verification-ready"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-proteomics",
+      "class": "python",
+      "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
+      "settings": {},
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "verification-ready"
+          ]
+        }
+      }
+    },
+    {
+      "name": "bijux-phylogenetics",
+      "class": "python",
+      "stack": "python",
+      "delivery": {
+        "documentation": "published",
+        "packages": "published"
+      },
+      "settings": {
+        "has_wiki": false
+      },
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",

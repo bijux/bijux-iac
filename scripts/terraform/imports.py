@@ -7,9 +7,10 @@ import os
 from pathlib import Path
 import subprocess
 
-from audit_live_repository_governance import list_rulesets, RULESET_NAME
-from render_main_branch_protection_tfvars import render_payload
-from repository_inventory import ROOT, validated_inventory, validate_owner
+from scripts.github.audit import RULESET_NAME
+from scripts.github.api import list_rulesets
+from scripts.terraform.render import render_payload
+from scripts.inventory.repositories import ROOT, validated_inventory, validate_owner
 
 WORK_DIR = ROOT / "artifacts/terraform/module"
 
@@ -32,7 +33,7 @@ def discover_all(inventory: dict) -> dict[str, int | None]:
 def import_rulesets() -> None:
     validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
     inventory = validated_inventory()
-    committed = ROOT / "infra/github/main-branch-protection/terraform.auto.tfvars.json"
+    committed = ROOT / "infra/github/repository-rulesets/terraform.auto.tfvars.json"
     expected = render_payload()
     if json.loads(committed.read_text()) != expected or json.loads((WORK_DIR / committed.name).read_text()) != expected:
         raise SystemExit("import requires validated, identical governed and working Terraform inputs")

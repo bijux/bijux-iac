@@ -9,10 +9,11 @@ import os
 from pathlib import Path
 import subprocess
 
-from audit_live_repository_governance import audit, gh_api_json, compare_settings
-from apply_repository_settings import apply_settings
-from import_main_branch_protection import import_rulesets, WORK_DIR
-from repository_inventory import ROOT, validated_inventory, merged_repository_settings, validate_owner
+from scripts.github.audit import audit, compare_settings
+from scripts.github.api import gh_api_json, list_rulesets
+from scripts.github.settings import apply_settings
+from scripts.terraform.imports import import_rulesets, WORK_DIR
+from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
 
 ARTIFACTS = ROOT / "artifacts/governance"
 RECEIPT = ARTIFACTS / "receipt.json"
@@ -28,7 +29,7 @@ def write_receipt(receipt: dict) -> None:
 def input_digests() -> dict[str, str]:
     paths = [ROOT / "inventory/repositories.json", ROOT / "Makefile", ROOT / "makes/root.mk",
              ROOT / ".github/standards/bijux-std.sha"]
-    for directory in ("scripts", "infra/github/main-branch-protection", ".github/workflows"):
+    for directory in ("scripts", "infra/github/repository-rulesets", ".github/workflows"):
         paths.extend(p for p in (ROOT / directory).rglob("*") if p.is_file() and ".terraform" not in p.parts)
     return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(paths))}
 
@@ -74,6 +75,40 @@ def settings_plan(inventory: dict, *, require_complete: bool = True) -> dict:
         if unavailable:
             changes[name]["unavailable_to_reader"] = unavailable
     return changes
+
+
+def verify_credential() -> dict:
+    """Observe required administrative visibility without probing a write API."""
+    require_accepted_main()
+    inventory = validated_inventory()
+    settings_plan(inventory)
+    access, errors = [], []
+    for repository in inventory["repositories"]:
+        name = repository["name"]
+        try:
+            rulesets = [rule for rule in list_rulesets(name) if rule["name"] == "main-branch-protection"]
+            if len(rulesets) != 1:
+                raise ValueError("exactly one managed ruleset is needed to verify administrator visibility")
+            detail = gh_api_json(f"repos/bijux/{name}/rulesets/{rulesets[0]['id']}")
+            # GitHub returns bypass actors only to callers with ruleset write
+            # permission. Their presence verifies scoped administrative visibility;
+            # policy contents are evaluated separately by the complete live audit.
+            if not isinstance(detail, dict) or not isinstance(detail.get("bypass_actors"), list):
+                raise ValueError("ruleset administration visibility is unavailable")
+            checks = gh_api_json(f"repos/bijux/{name}/commits/main/check-runs?per_page=1")
+            prs = gh_api_json(f"repos/bijux/{name}/pulls?state=closed&base=main&per_page=1")
+            if not isinstance(checks, dict) or not isinstance(checks.get("check_runs"), list) or not isinstance(prs, list):
+                raise ValueError("check-run or pull-request reads could not be verified")
+            access.append({"repository": name, "administration_visible": True, "check_and_pr_reads": True})
+        except (ValueError, subprocess.CalledProcessError) as error:
+            errors.append(f"{name}: {error}")
+    receipt = {"status": "credential-verification-failed" if errors else "credential-verified",
+               "commit": git_head(), "input_digests": input_digests(),
+               "credential_access": access, "errors": errors, "remote_writes": False}
+    write_receipt(receipt)
+    if errors:
+        raise ValueError("\n".join(errors))
+    return receipt
 
 
 def require_producers(inventory: dict) -> None:
@@ -207,7 +242,7 @@ def apply(receipt: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("operation", choices=["plan", "preflight", "apply"])
+    parser.add_argument("operation", choices=["plan", "verify-credential", "preflight", "apply"])
     args = parser.parse_args()
     if args.operation == "apply":
         apply(json.loads(RECEIPT.read_text()))
@@ -216,10 +251,13 @@ def main() -> None:
         if PLAN.exists():
             PLAN.unlink()
         try:
-            preflight(args.operation == "preflight")
+            if args.operation == "verify-credential":
+                verify_credential()
+            else:
+                preflight(args.operation == "preflight")
         except Exception as error:
             receipt = json.loads(RECEIPT.read_text())
-            receipt.update(status="preflight-failed", error=str(error))
+            receipt.update(status="credential-verification-failed" if args.operation == "verify-credential" else "preflight-failed", error=str(error))
             write_receipt(receipt)
             raise
 
