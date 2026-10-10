@@ -80,6 +80,19 @@ Only dispatch the accepted `publication-control.yml` on IaC `main`, specifying
 `repository`, `workflow`, `commit`, and the release tag when applicable. Choose
 `verify-credential` to test the selected installation, App identity, current
 target commit, and required Contents, Checks, Actions, and Variables reads.
+
+Installation tokens are opaque credentials. Do not validate their length, parse
+their JWT payload, or truncate them in environment variables or Authorization
+headers. GitHub's stateless token rollout is complete; newly minted tokens are
+about 520 characters and retain the `ghs_` prefix. The
+[GitHub rollout notice](https://github.blog/changelog/2026-10-02-stateless-github-app-installation-tokens-rolled-out/)
+sets November 30, 2026 as the retirement date for the temporary format override
+header. Production token creation follows GitHub's normal rollout behavior.
+Credential verification records only token character count and an observed
+format label after successful API reads. That diagnostic never controls admission
+and includes no credential bytes or decoded payload. Offline fixtures cover
+classic, stateless, longer, and unclassified opaque tokens without publication.
+
 This operation tests key/token creation and read access; it does not test a
 write API or require consumer trust to have been configured yet.
 The execution job records immutable inputs before creating the token, so a

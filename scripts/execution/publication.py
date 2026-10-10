@@ -74,6 +74,13 @@ def verify_credential(repository: str, workflow: str, commit: str, tag: str) -> 
             if not isinstance(gh_api_json(path).get(key), list):
                 raise ValueError(f"publication credential {endpoint} read could not be verified")
         receipt.update(status="credential-verified", controller_actor_id=str(bot["id"]), required_reads_verified=True)
+        token = os.environ.get("GH_TOKEN", "")
+        if token:
+            # Diagnostic shape only: authentication treats the entire token as opaque.
+            receipt["credential_transport"] = {
+                "characters": len(token),
+                "observed_format": "stateless" if token.startswith("ghs_") and token.count(".") == 2 else "opaque",
+            }
     finally:
         write_receipt(receipt)
     return receipt
