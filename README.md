@@ -179,6 +179,7 @@ Run commands from the repository root.
 | `make bijux-std-checks` | Verify managed content against the pinned `bijux-std` commit |
 | `make ci` | Run the pull-request gate composition |
 | `make live-audit` | Compare inventory with live GitHub settings and rulesets |
+| `make producer-audit` | Retain source-bound accepted required-check producers without writes |
 
 Generated providers, Python bytecode, reports, and other local output are
 contained under `artifacts/`.
@@ -227,6 +228,13 @@ plans and full plan JSON can contain credentials and are never uploaded. The
 saved plan remains on the same runner for apply; retries reconstruct live state
 and create a new preflight. Partial failure is recorded and audited without
 rollback. Do not place tokens in inventory, shell history, or committed artifacts.
+
+Before enforcing a required context, producer discovery checks its latest attempt
+on the exact current `main` commit, falling back to an accepted PR head only when
+the producer does not run on main. The PR approval producer always uses a PR head.
+A failed, cancelled, skipped, or pending retry cannot borrow an earlier success.
+The evidence records each context, commit, check-run ID, and producing App in
+`artifacts/governance/producers.json` and the privileged preflight receipt.
 
 ## Failure Policy
 

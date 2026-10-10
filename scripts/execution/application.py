@@ -11,6 +11,7 @@ import subprocess
 
 from scripts.github.audit import audit, compare_settings
 from scripts.github.api import gh_api_json, list_rulesets
+from scripts.github.checks import require_producers
 from scripts.github.settings import apply_settings
 from scripts.terraform.imports import import_rulesets, WORK_DIR
 from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
@@ -111,48 +112,21 @@ def verify_credential() -> dict:
     return receipt
 
 
-def require_producers(inventory: dict) -> None:
-    errors = []
-    for repository in inventory["repositories"]:
-        name = repository["name"]
-        pages = json.loads(subprocess.check_output([
-            "gh", "api", "--paginate", "--slurp", f"repos/bijux/{name}/commits/main/check-runs?per_page=100",
-        ], text=True))
-        if not isinstance(pages, list) or not all(isinstance(page, dict) and isinstance(page.get("check_runs"), list) for page in pages):
-            raise ValueError(f"{name}: malformed check producer response")
-        runs = [run for page in pages for run in page["check_runs"]]
-        # PR policy checks belong to accepted pull requests, rather than push runs.
-        # Their existing producers are checked on the most recently merged PR.
-        prs = gh_api_json(f"repos/bijux/{name}/pulls?state=closed&base=main&per_page=100")
-        if not isinstance(prs, list):
-            raise ValueError(f"{name}: malformed accepted PR response")
-        merged = next((pr for pr in prs if pr.get("merged_at")), None)
-        if merged:
-            pr_sha = merged["head"]["sha"]
-            pages = json.loads(subprocess.check_output([
-                "gh", "api", "--paginate", "--slurp", f"repos/bijux/{name}/commits/{pr_sha}/check-runs?per_page=100",
-            ], text=True))
-            runs.extend(run for page in pages for run in page["check_runs"])
-        for context in repository["governance"]["branch_protection"]["required_status_checks"]:
-            if not any(run.get("name") == context and run.get("app", {}).get("id") == 15368
-                       and run.get("conclusion") == "success" for run in runs):
-                errors.append(f"{name}: no successful accepted GitHub Actions producer for {context!r}")
-    if errors:
-        raise ValueError("\n".join(errors))
-
-
 def preflight(privileged: bool) -> dict:
     validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
     inventory = validated_inventory()
+    producers = None
     if privileged:
         require_accepted_main()
-        require_producers(inventory)
+        producers = require_producers(inventory)
     version = json.loads(subprocess.check_output(["terraform", "version", "-json"], text=True))
     if version.get("terraform_version") != TERRAFORM_VERSION:
         raise ValueError(f"Terraform must be {TERRAFORM_VERSION}")
     receipt = {"status": "preflight", "commit": git_head(), "privileged": privileged,
                "input_digests": input_digests(), "tools": {"terraform": TERRAFORM_VERSION, "github_provider": "6.13.0"},
                "settings": settings_plan(inventory, require_complete=privileged), "completed": [], "outstanding": []}
+    if producers is not None:
+        receipt["producer_evidence"] = producers
     write_receipt(receipt)
     subprocess.run(["make", "contract-tests", "terraform-validate"], cwd=ROOT, check=True)
     # Each execution rebuilds state from authoritative discovery, including retries.
