@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "classes": {
     "foundation": {
       "description": "Control-plane repositories for governance and shared standards."
@@ -40,7 +40,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -67,7 +66,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -91,7 +89,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -115,7 +112,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -141,7 +137,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -167,7 +162,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -191,7 +185,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -217,7 +210,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -241,7 +233,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -266,7 +257,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -291,7 +281,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",
@@ -318,7 +307,6 @@
           "enabled": true,
           "engine": "ruleset",
           "required_approving_review_count": 0,
-          "enforce_admins": false,
           "required_status_checks": [
             "policy / github",
             "policy / pr approval",

@@ -2,7 +2,7 @@ ROOT_MAKEFILE_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 include $(ROOT_MAKEFILE_DIR)/bijux-std.mk
 
-TERRAFORM_ROOT := infra/github/main-branch-protection
+TERRAFORM_ROOT := infra/github/repository-rulesets
 TERRAFORM_DATA_DIR := $(CURDIR)/artifacts/terraform/data
 TERRAFORM_WORK_DIR := $(CURDIR)/artifacts/terraform/module
 PYTHON_CACHE_ROOT := $(CURDIR)/artifacts/python/pycache
@@ -24,14 +24,13 @@ include $(CURDIR)/.bijux/shared/bijux-makes/bijux.mk
 	live-audit \
 	python-syntax-check \
 	repository-tools \
-	shell-syntax-check \
 	terraform-format-check \
 	terraform-init \
 	terraform-inputs \
 	terraform-validate \
 	tfvars-check
 
-contract-tests: inventory-check tfvars-check python-syntax-check shell-syntax-check ## Verify repository governance contracts
+contract-tests: inventory-check tfvars-check python-syntax-check ## Verify repository governance contracts
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
 		python3 -m unittest discover -s tests -t . -p 'test_*.py'
 
@@ -47,9 +46,6 @@ python-syntax-check: ## Compile repository-owned Python without source-tree cach
 	@mkdir -p "$(PYTHON_CACHE_ROOT)"
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \
 		python3 -m compileall -q scripts
-
-shell-syntax-check: ## Validate repository-owned shell scripts
-	@bash -n "$(TERRAFORM_ROOT)/scripts/import_main_branch_protection.sh"
 
 live-audit: ## Compare inventory with live GitHub governance
 	@PYTHONPYCACHEPREFIX="$(PYTHON_CACHE_ROOT)" \

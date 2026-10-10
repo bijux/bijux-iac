@@ -33,7 +33,7 @@ def discover_all(inventory: dict) -> dict[str, int | None]:
 def import_rulesets() -> None:
     validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
     inventory = validated_inventory()
-    committed = ROOT / "infra/github/main-branch-protection/terraform.auto.tfvars.json"
+    committed = ROOT / "infra/github/repository-rulesets/terraform.auto.tfvars.json"
     expected = render_payload()
     if json.loads(committed.read_text()) != expected or json.loads((WORK_DIR / committed.name).read_text()) != expected:
         raise SystemExit("import requires validated, identical governed and working Terraform inputs")

@@ -15,7 +15,7 @@ from scripts.inventory.repositories import (
 
 ALLOWED_CLASSES = {"foundation", "hubs", "python", "rust"}
 ALLOWED_DELIVERY_STATES = {"not-applicable", "planned", "published"}
-ALLOWED_VISIBILITIES = {"public", "private"}
+ALLOWED_VISIBILITIES = {"public"}
 REPOSITORY_SETTING_TYPES = {
     "visibility": str,
     "has_issues": bool,
@@ -97,8 +97,8 @@ def validate_inventory(inventory: object) -> None:
     if not isinstance(inventory, dict):
         fail("inventory must be an object")
     require_keys("inventory", inventory, {"version", "classes", "repository_settings_defaults", "repositories"})
-    if type(inventory.get("version")) is not int or inventory["version"] != 2:
-        fail("inventory version must be 2")
+    if type(inventory.get("version")) is not int or inventory["version"] != 3:
+        fail("inventory version must be 3")
 
     classes = inventory.get("classes")
     if not isinstance(classes, dict):
@@ -181,10 +181,8 @@ def validate_inventory(inventory: object) -> None:
             )
         if type(branch.get("required_approving_review_count")) is not int:
             fail(f"{name}: branch_protection.required_approving_review_count must be int")
-        if not isinstance(branch.get("enforce_admins"), bool):
-            fail(f"{name}: branch_protection.enforce_admins must be bool")
         allowed_branch_keys = {
-            "enabled", "engine", "required_approving_review_count", "enforce_admins",
+            "enabled", "engine", "required_approving_review_count",
             "required_status_checks",
         }
         if set(branch) != allowed_branch_keys:

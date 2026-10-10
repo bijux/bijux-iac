@@ -29,7 +29,7 @@ def write_receipt(receipt: dict) -> None:
 def input_digests() -> dict[str, str]:
     paths = [ROOT / "inventory/repositories.json", ROOT / "Makefile", ROOT / "makes/root.mk",
              ROOT / ".github/standards/bijux-std.sha"]
-    for directory in ("scripts", "infra/github/main-branch-protection", ".github/workflows"):
+    for directory in ("scripts", "infra/github/repository-rulesets", ".github/workflows"):
         paths.extend(p for p in (ROOT / directory).rglob("*") if p.is_file() and ".terraform" not in p.parts)
     return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(paths))}
 

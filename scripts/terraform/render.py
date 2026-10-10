@@ -7,58 +7,18 @@ import json
 from scripts.inventory.repositories import ROOT, validated_inventory
 
 
-TFVARS_PATH = ROOT / "infra/github/main-branch-protection/terraform.auto.tfvars.json"
+TFVARS_PATH = ROOT / "infra/github/repository-rulesets/terraform.auto.tfvars.json"
 
 
 def render_payload() -> dict:
     inventory = validated_inventory()
-    repositories = inventory.get("repositories", [])
-
-    legacy_protected: list[str] = []
-    legacy_review_counts: set[int] = set()
-    legacy_enforce_admins_repositories: list[str] = []
-    ruleset_repositories: list[str] = []
-    ruleset_review_counts: set[int] = set()
-    ruleset_required_status_checks: dict[str, list[str]] = {}
-
-    for repo in repositories:
-        branch = repo["governance"]["branch_protection"]
-        if not branch["enabled"]:
-            continue
-        if branch["engine"] == "branch_protection":
-            legacy_protected.append(repo["name"])
-            legacy_review_counts.add(branch["required_approving_review_count"])
-            if branch["enforce_admins"]:
-                legacy_enforce_admins_repositories.append(repo["name"])
-            continue
-
-        ruleset_repositories.append(repo["name"])
-        ruleset_review_counts.add(branch["required_approving_review_count"])
-        ruleset_required_status_checks[repo["name"]] = branch["required_status_checks"]
-
-    if len(legacy_review_counts) > 1:
-        raise SystemExit(
-            "legacy branch protection review count must be uniform for current Terraform shape: "
-            f"{sorted(legacy_review_counts)}"
-        )
-    if len(ruleset_review_counts) > 1:
-        raise SystemExit(
-            "ruleset review count must be uniform for current Terraform shape: "
-            f"{sorted(ruleset_review_counts)}"
-        )
+    repositories = {repository["name"]: repository for repository in inventory["repositories"]}
     return {
-        "legacy_branch_protection_repositories": sorted(legacy_protected),
-        "legacy_required_approving_review_count": (
-            legacy_review_counts.pop() if legacy_review_counts else 1
-        ),
-        "legacy_enforce_admins_repositories": sorted(legacy_enforce_admins_repositories),
-        "ruleset_repositories": sorted(ruleset_repositories),
-        "ruleset_required_approving_review_count": (
-            ruleset_review_counts.pop() if ruleset_review_counts else 0
-        ),
+        "ruleset_repositories": sorted(repositories),
+        "ruleset_required_approving_review_count": 0,
         "ruleset_required_status_checks": {
-            repo: ruleset_required_status_checks[repo]
-            for repo in sorted(ruleset_required_status_checks)
+            name: repositories[name]["governance"]["branch_protection"]["required_status_checks"]
+            for name in sorted(repositories)
         },
     }
 

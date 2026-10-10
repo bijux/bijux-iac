@@ -74,6 +74,16 @@ the wrong stack, or given a delivery state that contradicts this contract.
 This makes the `bijux-gnss` identity durable and prevents obsolete repository
 names from re-entering the control plane.
 
+Every entry uses the same `name`, `class`, `stack`, `delivery`, `settings`, and
+`governance` shape, ordered by foundations, hubs, Rust products, and Python
+products. Shared repository settings are declared once in
+`repository_settings_defaults`. An explicit `settings: {}` inherits them;
+nonempty objects declare only real differences. The four existing wiki overrides
+remain visible. Overrides cannot weaken the common visibility, issues, merge,
+branch-deletion, or sign-off contract, and restating a default is rejected.
+Unknown or duplicate keys fail validation. The inventory validator's `--write`
+option writes the canonical family order and formatting.
+
 ## Repository Layout
 
 | Path | Purpose |
@@ -83,7 +93,7 @@ names from re-entering the control plane.
 | [`scripts/github/`](scripts/github) | API reads, complete live audit, and bounded repository settings writes |
 | [`scripts/terraform/`](scripts/terraform) | Deterministic ruleset inputs and authoritative imports |
 | [`scripts/execution/`](scripts/execution) | Accepted-main preflight and application of the bound plan |
-| [`infra/github/main-branch-protection/`](infra/github/main-branch-protection) | Terraform module for legacy branch protection and current repository rulesets |
+| [`infra/github/repository-rulesets/`](infra/github/repository-rulesets) | Locked Terraform module for the family’s main rulesets |
 | [`tests/`](tests) | Offline contracts grouped by the same inventory, GitHub, Terraform, and execution boundaries |
 | [`makes/`](makes) | Repository-owned composition of shared Make foundations |
 | [`.bijux/shared/`](.bijux/shared) | Generated standards payload selected by capability |
