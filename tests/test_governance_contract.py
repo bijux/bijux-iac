@@ -47,6 +47,25 @@ class GovernanceContractTests(unittest.TestCase):
         self.assertTrue({"iac / contracts", "iac / plan", "iac / governance"}.issubset(
             self.repositories["bijux-iac"]["governance"]["branch_protection"]["required_status_checks"]))
 
+    def test_missing_unknown_and_redundant_settings_are_rejected(self):
+        import copy
+        from validate_repo_inventory import validate_inventory
+        for mutate in [lambda repo: repo.pop("settings"),
+                       lambda repo: repo.update(unknown_policy=True),
+                       lambda repo: repo["settings"].update(has_issues=True),
+                       lambda repo: repo["settings"].update(allow_rebase_merge=True)]:
+            inventory = copy.deepcopy(self.inventory)
+            mutate(inventory["repositories"][0])
+            with self.subTest(repository=inventory["repositories"][0]), self.assertRaises(SystemExit):
+                validate_inventory(inventory)
+
+    def test_duplicate_json_keys_cannot_hide_inventory_policy(self):
+        from unittest.mock import Mock
+        path = Mock()
+        path.read_text.return_value = '{"settings": {"allow_merge_commit": true, "allow_merge_commit": false}}'
+        with self.assertRaisesRegex(ValueError, "duplicate inventory key"):
+            load_inventory(path)
+
     def test_genomics_is_the_only_planned_product_delivery(self) -> None:
         planned = {
             name

@@ -13,14 +13,14 @@ FAMILY_REPOSITORIES = {
     "bijux-std": ("foundation", "make", "not-applicable", "not-applicable"),
     "bijux.github.io": ("hubs", "docs", "published", "not-applicable"),
     "bijux-masterclass": ("hubs", "docs", "published", "not-applicable"),
-    "bijux-canon": ("python", "python", "published", "published"),
-    "bijux-proteomics": ("python", "python", "published", "published"),
-    "bijux-pollenomics": ("python", "python", "published", "published"),
-    "bijux-phylogenetics": ("python", "python", "published", "published"),
+    "bijux-genomics": ("rust", "rust", "planned", "planned"),
     "bijux-core": ("rust", "rust", "published", "published"),
     "bijux-atlas": ("rust", "rust", "published", "published"),
     "bijux-gnss": ("rust", "rust", "published", "published"),
-    "bijux-genomics": ("rust", "rust", "planned", "planned"),
+    "bijux-canon": ("python", "python", "published", "published"),
+    "bijux-pollenomics": ("python", "python", "published", "published"),
+    "bijux-proteomics": ("python", "python", "published", "published"),
+    "bijux-phylogenetics": ("python", "python", "published", "published"),
 }
 
 BASELINE_REQUIRED_STATUS_CHECKS = {
@@ -31,8 +31,30 @@ BASELINE_REQUIRED_STATUS_CHECKS = {
 }
 
 
+def unique_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate inventory key: {key}")
+        result[key] = value
+    return result
+
+
 def load_inventory(path: Path = INVENTORY_PATH) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_keys)
+
+
+def canonical_inventory(inventory: dict[str, Any]) -> str:
+    repositories = {repo["name"]: repo for repo in inventory["repositories"]}
+    class_order = ("foundation", "hubs", "rust", "python")
+    repository_keys = ("name", "class", "stack", "delivery", "settings", "governance")
+    normalized = {
+        "version": inventory["version"],
+        "classes": {name: inventory["classes"][name] for name in class_order},
+        "repository_settings_defaults": inventory["repository_settings_defaults"],
+        "repositories": [{key: repositories[name][key] for key in repository_keys} for name in FAMILY_REPOSITORIES],
+    }
+    return json.dumps(normalized, indent=2) + "\n"
 
 
 def merged_repository_settings(
@@ -41,7 +63,7 @@ def merged_repository_settings(
 ) -> dict[str, Any]:
     return {
         **inventory["repository_settings_defaults"],
-        **repository.get("settings", {}),
+        **repository["settings"],
     }
 
 
