@@ -62,7 +62,8 @@ resource "github_repository_ruleset" "main" {
       dynamic "required_check" {
         for_each = toset(var.ruleset_required_status_checks[each.value])
         content {
-          context = required_check.value
+          context        = required_check.value
+          integration_id = 15368
         }
       }
     }
