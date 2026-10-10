@@ -2,6 +2,10 @@ variable "github_owner" {
   description = "GitHub organization owner name"
   type        = string
   default     = "bijux"
+  validation {
+    condition     = var.github_owner == "bijux"
+    error_message = "Governance is restricted to the bijux owner."
+  }
 }
 
 variable "github_token" {

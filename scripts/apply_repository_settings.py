@@ -5,10 +5,15 @@ import argparse
 import json
 import subprocess
 
-from repository_inventory import load_inventory, merged_repository_settings
+from repository_inventory import validated_inventory, merged_repository_settings, validate_owner
 
 
 def apply_settings(owner: str, name: str, settings: dict[str, object]) -> None:
+    validate_owner(owner)
+    inventory = validated_inventory()
+    repository = next((repo for repo in inventory["repositories"] if repo["name"] == name), None)
+    if repository is None or settings != merged_repository_settings(inventory, repository):
+        raise ValueError("settings must match the complete validated family inventory")
     subprocess.run(
         [
             "gh",
@@ -33,15 +38,10 @@ def main() -> None:
     parser.add_argument("--owner", default="bijux", help="GitHub organization owner")
     args = parser.parse_args()
 
-    inventory = load_inventory()
-    repositories = inventory["repositories"]
-    for repository in repositories:
-        name = repository["name"]
-        settings = merged_repository_settings(inventory, repository)
-        apply_settings(args.owner, name, settings)
-        print(f"repository settings applied: {name}")
-
-    print(f"repository settings: OK ({len(repositories)} repositories)")
+    validate_owner(args.owner)
+    # Settings cannot be applied independently of the bound ruleset preflight.
+    from governance_execution import apply, RECEIPT
+    apply(json.loads(RECEIPT.read_text()))
 
 
 if __name__ == "__main__":

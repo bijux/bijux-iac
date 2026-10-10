@@ -1,8 +1,6 @@
 name: github-governance-apply
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -13,50 +11,54 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  apply:
+  admission:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Reject unaccepted application refs before entering the credential environment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY_REPOSITORY: ${{ github.repository }}
+          APPLY_EVENT: ${{ github.event_name }}
+          APPLY_REF: ${{ github.ref }}
+          APPLY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$APPLY_REPOSITORY" == "bijux/bijux-iac" ]] || exit 1
+          [[ "$APPLY_EVENT" == "workflow_dispatch" ]] || exit 1
+          [[ "$APPLY_REF" == "refs/heads/main" ]] || exit 1
+          accepted_sha="$(gh api repos/bijux/bijux-iac/commits/main --jq .sha)"
+          [[ "$accepted_sha" == "$APPLY_SHA" ]] || exit 1
+
+  apply:
+    needs: admission
+    environment: governance-apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GOVERNANCE_TOKEN }}
+      TF_VAR_github_token: ${{ secrets.GOVERNANCE_TOKEN }}
+      PYTHONPYCACHEPREFIX: ${{ github.workspace }}/artifacts/python/pycache
+    steps:
+      - name: Require the protected environment credential
+        run: test -n "$GH_TOKEN"
+      - name: Checkout accepted input commit
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.1.0
         with:
-          python-version: "3.11"
-
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
-
-      - name: Validate repository inventory
-        run: python3 scripts/validate_repo_inventory.py
-
-      - name: Check rendered branch protection targets
-        run: python3 scripts/render_main_branch_protection_tfvars.py --check
-
-      - name: Apply repository settings
-        env:
-          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
-        run: python3 scripts/apply_repository_settings.py
-
-      - name: Terraform init
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: terraform init
-
-      - name: Import current branch protection state
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: ./scripts/import_main_branch_protection.sh
-
-      - name: Terraform apply
-        env:
-          TF_VAR_github_token: ${{ secrets.GH_ADMIN_TOKEN }}
-        working-directory: infra/github/main-branch-protection
-        run: terraform apply -input=false -auto-approve
-
-      - name: Audit live governance
-        env:
-          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
-        run: python3 scripts/audit_live_repository_governance.py
+        with:
+          terraform_version: 1.16.5
+          terraform_wrapper: false
+      - name: Complete accepted-main preflight before the first write
+        run: python3 scripts/governance_execution.py preflight
+      - name: Apply the bound settings and saved ruleset plan, then audit the family
+        run: python3 scripts/governance_execution.py apply
+      - name: Retain application receipt and partial-operation ledger
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: governance-application-receipt
+          path: artifacts/governance/receipt.json
+          if-no-files-found: error

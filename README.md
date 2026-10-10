@@ -48,7 +48,8 @@ must be refreshed through the standards tooling, not edited locally.
 
 ## Governed Family
 
-The inventory contains the complete twelve-repository family. Delivery state is
+The inventory contains exactly twelve repositories: two foundations, two hubs,
+four Rust products, and four Python products. Delivery state is
 operational metadata: `published` means the public surface exists,
 `planned` means it is deliberately not yet published, and `not-applicable`
 means that repository does not own the surface.
@@ -57,8 +58,8 @@ means that repository does not own the surface.
 | --- | --- | --- | --- | --- |
 | `bijux-iac` | GitHub control plane | Terraform | Not applicable | Not applicable |
 | `bijux-std` | Shared standards control plane | Make | Not applicable | Not applicable |
-| `bijux.github.io` | Portfolio website | Docs | Published | Not applicable |
-| `bijux-masterclass` | Course website | Docs | Published | Not applicable |
+| `bijux.github.io` | Documentation hub | Docs | Published | Not applicable |
+| `bijux-masterclass` | Learning hub | Docs | Published | Not applicable |
 | `bijux-canon` | Product | Python | Published | Published |
 | `bijux-proteomics` | Product | Python | Published | Published |
 | `bijux-pollenomics` | Product | Python | Published | Published |
@@ -133,9 +134,10 @@ deleting `main`.
 
 5. Open a pull request. The plan workflow validates the inventory, imports live
    ruleset state, and produces a Terraform plan without changing GitHub.
-6. Merge only after required checks pass. The serialized apply workflow first
-   patches repository settings, then imports current rulesets and applies
-   Terraform.
+6. Merge only after required checks pass. Application is a separate manual
+   dispatch on accepted `main`. Its serialized workflow completes inventory,
+   settings discovery, imports, validation, producer checks, and a saved ruleset
+   plan before changing any GitHub setting.
 7. The workflow audits live settings and rulesets after apply. The same audit
    is available locally:
 
@@ -166,6 +168,9 @@ Run commands from the repository root.
 
 Generated providers, Python bytecode, reports, and other local output are
 contained under `artifacts/`.
+Local Terraform validation copies the governed module and committed provider
+lock into `artifacts/terraform/module`. Initialization uses the lock read-only;
+runtime state and plans stay in artifacts. Formatting checks the authored module.
 
 ## Prerequisites
 
@@ -173,13 +178,33 @@ Local validation requires:
 
 - Python 3.11 or newer
 - Bash
-- Terraform 1.6 or newer
+- Terraform 1.16.5
 - GitHub CLI for live settings operations
 
 The apply and live-audit paths require a GitHub token with repository
 administration permission across the governed family. GitHub Actions reads it
-from the `GH_ADMIN_TOKEN` repository secret. Do not place tokens in Terraform
-variables, inventory files, shell history, or committed artifacts.
+from the `GOVERNANCE_TOKEN` secret in the `governance-apply` environment.
+Configure that environment with a selected deployment branch rule matching only
+`main`, and no tag rules. Keep administration credentials out of repository and
+organization secrets available to this repository. In particular, move the
+existing `GH_ADMIN_TOKEN` repository secret into the environment under the new
+name and retire the repository copy after verifying the replacement. GitHub
+cannot reveal an existing secret value; an administrator must enter its value
+through GitHub settings or `gh secret set --env governance-apply`.
+
+PR planning uses only the workflow's read-only GitHub token. Public metadata and
+ruleset reads suffice for the read-only ruleset plan. The PR receipt explicitly
+records settings withheld from readers; it cannot authorize application.
+Privileged preflight requires a complete settings diff and repeats discovery with
+administration visibility, including bypass actors. A missing bypass field is
+an audit failure, not evidence that bypass is disabled.
+
+The application receipt binds the accepted commit, input digests, tool versions,
+settings before/after values, plan digest, and operation ledger. Binary Terraform
+plans and full plan JSON can contain credentials and are never uploaded. The
+saved plan remains on the same runner for apply; retries reconstruct live state
+and create a new preflight. Partial failure is recorded and audited without
+rollback. Do not place tokens in inventory, shell history, or committed artifacts.
 
 ## Failure Policy
 

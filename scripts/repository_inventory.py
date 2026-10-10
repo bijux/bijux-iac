@@ -11,8 +11,8 @@ INVENTORY_PATH = ROOT / "inventory/repositories.json"
 FAMILY_REPOSITORIES = {
     "bijux-iac": ("foundation", "terraform", "not-applicable", "not-applicable"),
     "bijux-std": ("foundation", "make", "not-applicable", "not-applicable"),
-    "bijux.github.io": ("web-course", "docs", "published", "not-applicable"),
-    "bijux-masterclass": ("web-course", "docs", "published", "not-applicable"),
+    "bijux.github.io": ("hubs", "docs", "published", "not-applicable"),
+    "bijux-masterclass": ("hubs", "docs", "published", "not-applicable"),
     "bijux-canon": ("python", "python", "published", "published"),
     "bijux-proteomics": ("python", "python", "published", "published"),
     "bijux-pollenomics": ("python", "python", "published", "published"),
@@ -43,3 +43,16 @@ def merged_repository_settings(
         **inventory["repository_settings_defaults"],
         **repository.get("settings", {}),
     }
+
+
+def validated_inventory() -> dict[str, Any]:
+    from validate_repo_inventory import validate_inventory
+
+    inventory = load_inventory()
+    validate_inventory(inventory)
+    return inventory
+
+
+def validate_owner(owner: str) -> None:
+    if owner != "bijux":
+        raise SystemExit("governance owner must be bijux")
