@@ -52,6 +52,7 @@ def canonical_inventory(inventory: dict[str, Any]) -> str:
         "version": inventory["version"],
         "classes": {name: inventory["classes"][name] for name in class_order},
         "repository_settings_defaults": inventory["repository_settings_defaults"],
+        "workflow_execution_defaults": inventory["workflow_execution_defaults"],
         "repositories": [{key: repositories[name][key] for key in repository_keys} for name in FAMILY_REPOSITORIES],
     }
     return json.dumps(normalized, indent=2) + "\n"

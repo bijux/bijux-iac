@@ -102,9 +102,11 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 require_main("bijux/bijux-iac", "workflow_dispatch", "refs/heads/main", "outdated")
 
     def test_pr_planning_does_not_reference_administration_secrets(self):
+        from scripts.inventory.publication import workflow_policy
         workflow = (ROOT / ".github/workflows/github-governance-plan.yml").read_text()
         self.assertNotIn("secrets.", workflow)
-        self.assertNotIn("pull_request_target", workflow)
+        document = workflow_policy().parse_workflow(workflow.encode(), "github-governance-plan.yml")
+        self.assertEqual(document["on"], {"pull_request": {"branches": ["main"]}})
         self.assertNotIn("contents: write", workflow)
         self.assertIn("TF_VAR_github_token: ${{ github.token }}", workflow)
 

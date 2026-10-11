@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "classes": {
     "foundation": {
       "description": "Control-plane repositories for governance and shared standards."
@@ -27,6 +27,11 @@
     "allow_auto_merge": false,
     "web_commit_signoff_required": false
   },
+  "workflow_execution_defaults": {
+    "dependency_pull_requests": "notification-only",
+    "main_verification": "accepted-pull-request",
+    "dependency_merge": "owner-consolidation"
+  },
   "repositories": [
     {
       "name": "bijux-iac",
@@ -51,7 +56,8 @@
             "iac / plan",
             "iac / governance"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -74,7 +80,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -97,7 +104,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -120,6 +128,9 @@
             "std / standard",
             "std / report"
           ]
+        },
+        "workflow_execution": {
+          "main_verification": "existing-events"
         }
       }
     },
@@ -143,7 +154,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -166,7 +178,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -189,7 +202,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -212,7 +226,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -236,7 +251,8 @@
             "std / report",
             "verification-ready"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -260,7 +276,8 @@
             "std / report",
             "verification-ready"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -284,7 +301,8 @@
             "std / report",
             "verification-ready"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     },
     {
@@ -307,7 +325,8 @@
             "std / standard",
             "std / report"
           ]
-        }
+        },
+        "workflow_execution": {}
       }
     }
   ]

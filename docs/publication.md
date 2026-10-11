@@ -2,8 +2,10 @@
 
 The `publication-control` workflow in `bijux-iac` is the manual entry point for
 the family's applicable documentation deployments and releases. Merging to
-`main` never requests publication. Build, test, and CI artifact workflows remain
-automatic.
+`main` never requests publication through this controller. Human pull requests
+retain their applicable build, test and CI checks; dependency proposals receive
+review notices. The accepted-PR execution policy avoids repeating those checks
+after merge. Masterclass retains its existing human workflow events.
 
 The accepted `bijux-std` manifest owns which canonical publishers each repository
 supports. Every family member must declare its publication capability, including
@@ -112,8 +114,11 @@ The unprivileged admission job rejects a feature ref or invalid capability befor
 entering the credential environment. The controller then verifies the App's
 identity and exact permissions, consumer admission, current accepted target,
 tag resolution, and all effective required commit checks from GitHub Actions.
-The PR-only approval check is verified during merge rather than required to
-reappear on the merge commit.
+For accepted-PR execution, those checks and owner approval belong to the exact
+human PR head bound to the current normal main merge. Existing-event repositories
+retain their current-main check admission. A dependency notice cannot establish
+publication readiness. For existing-event repositories, PR-only approval is
+verified during merge rather than required to reappear on the merge commit.
 
 The consumer repeats exact-commit and authenticated bot admission before any
 publisher job can expose publication credentials. A retry repeats admission and
