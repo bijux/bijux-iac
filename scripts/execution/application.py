@@ -13,7 +13,9 @@ from scripts.github.audit import audit, compare_settings
 from scripts.github.api import gh_api_json, list_rulesets
 from scripts.github.checks import require_producers
 from scripts.github.settings import apply_settings
+from scripts.github.rulesets import require_ruleset_snapshot, ruleset_snapshot
 from scripts.terraform.imports import import_rulesets, WORK_DIR
+from scripts.terraform.plans import require_representable_rulesets, validate_ruleset_changes
 from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
 
 ARTIFACTS = ROOT / "artifacts/governance"
@@ -128,8 +130,13 @@ def preflight(privileged: bool) -> dict:
                "settings": settings_plan(inventory, require_complete=privileged), "completed": [], "outstanding": []}
     if producers is not None:
         receipt["producer_evidence"] = producers
+        receipt["ruleset_before_images"] = ruleset_snapshot(inventory)
     write_receipt(receipt)
     subprocess.run(["make", "contract-tests", "terraform-validate"], cwd=ROOT, check=True)
+    if privileged:
+        schema = json.loads(terraform("providers", "schema", "-json", capture=True))
+        require_representable_rulesets(receipt["ruleset_before_images"], schema)
+        receipt["provider_schema_digest"] = hashlib.sha256(json.dumps(schema, sort_keys=True).encode()).hexdigest()
     # Each execution rebuilds state from authoritative discovery, including retries.
     for state in WORK_DIR.glob("terraform.tfstate*"):
         state.unlink()
@@ -138,9 +145,9 @@ def preflight(privileged: bool) -> dict:
     plan = json.loads(terraform("show", "-json", str(PLAN), capture=True))
     changes = plan.get("resource_changes", [])
     allowed = {f'github_repository_ruleset.main["{r["name"]}"]' for r in inventory["repositories"]}
-    for change in changes:
-        if change.get("mode") == "managed" and (change.get("address") not in allowed or "delete" in change["change"]["actions"]):
-            raise ValueError("plan contains an unowned or destructive resource operation")
+    validate_ruleset_changes(changes, allowed)
+    if privileged:
+        require_ruleset_snapshot(inventory, receipt["ruleset_before_images"])
     # Terraform JSON and binary plans contain sensitive variable values. Retain
     # only reviewable action summaries in the uploaded receipt; never tokens.
     fields = {"name", "repository", "target", "enforcement", "conditions", "rules", "bypass_actors"}
@@ -171,6 +178,7 @@ def apply(receipt: dict) -> None:
     current = settings_plan(inventory)
     if current != receipt["settings"]:
         raise ValueError("live settings changed after planning; repeat preflight")
+    require_ruleset_snapshot(inventory, receipt.get("ruleset_before_images"))
     receipt["outstanding"] = [f"settings:{name}" for name, settings in current.items()
                               if compare_settings(name, settings["after"], settings["before"])] + [
                                   f"ruleset:{repository['name']}" for repository in inventory["repositories"]
@@ -189,6 +197,9 @@ def apply(receipt: dict) -> None:
             receipt["completed"].append(operation)
             receipt["outstanding"].remove(operation)
             write_receipt(receipt)
+        # Settings writes can take time. Re-read the bound rulesets immediately
+        # before Terraform as well, retaining partial operations on refusal.
+        require_ruleset_snapshot(inventory, receipt["ruleset_before_images"])
         terraform("apply", "-input=false", str(PLAN))
         receipt["status"] = "applied"
     except Exception as error:

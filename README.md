@@ -230,11 +230,22 @@ administration visibility, including bypass actors. A missing bypass field is
 an audit failure, not evidence that bypass is disabled.
 
 The application receipt binds the accepted commit, input digests, tool versions,
-settings before/after values, plan digest, and operation ledger. Binary Terraform
+settings before/after values, complete live ruleset before-images, plan digest,
+and operation ledger. Privileged planning re-reads those rulesets after creating
+the saved plan. Application compares them again before its first write and
+immediately before Terraform; an intervening change requires a fresh preflight.
+Privileged preflight also checks every existing API rule and parameter against
+the actual locked provider schema before importing state. API protections absent
+from that schema require reviewed provider support before application; a public
+read-only PR plan cannot prove this preservation. Plans must preserve protections
+outside the four authored rule types and their authored parameters. Binary Terraform
 plans and full plan JSON can contain credentials and are never uploaded. The
 saved plan remains on the same runner for apply; retries reconstruct live state
-and create a new preflight. Partial failure is recorded and audited without
-rollback. Do not place tokens in inventory, shell history, or committed artifacts.
+and create a new preflight. Receipts without complete ruleset before-images are
+not application-ready. Partial failure is recorded and audited without rollback.
+The comparisons narrow the concurrency window; GitHub writes are not atomic and
+no transactional rollback is promised. Do not place tokens in inventory, shell
+history, or committed artifacts.
 
 Before enforcing a required context, producer discovery binds the current normal
 main merge to its exact accepted human PR head and verifies that the consumer

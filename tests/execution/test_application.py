@@ -132,6 +132,80 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     verify_receipt(receipt)
 
+    def test_provider_preservation_refusal_precedes_import_and_plan(self):
+        import json
+        from unittest.mock import patch
+        from scripts.execution import application
+        inventory = {"repositories": [{"name": "bijux-iac"}]}
+        with patch.object(application, "validated_inventory", return_value=inventory), \
+                patch.object(application, "require_accepted_main"), \
+                patch.object(application, "require_producers", return_value=[]), \
+                patch.object(application.subprocess, "check_output", return_value=json.dumps({"terraform_version": application.TERRAFORM_VERSION})), \
+                patch.object(application.subprocess, "run"), \
+                patch.object(application, "git_head", return_value="accepted"), \
+                patch.object(application, "input_digests", return_value={}), \
+                patch.object(application, "settings_plan", return_value={}), \
+                patch.object(application, "ruleset_snapshot", return_value={"bijux-iac": None}), \
+                patch.object(application, "write_receipt"), \
+                patch.object(application, "terraform", return_value="{}") as terraform, \
+                patch.object(application, "require_representable_rulesets", side_effect=ValueError("cannot preserve API protections")), \
+                patch.object(application, "import_rulesets") as imports, \
+                patch.object(application, "apply_settings") as writes:
+            with self.assertRaisesRegex(ValueError, "cannot preserve API protections"):
+                application.preflight(True)
+        terraform.assert_called_once_with("providers", "schema", "-json", capture=True)
+        imports.assert_not_called()
+        writes.assert_not_called()
+
+    def test_public_plan_does_not_claim_privileged_preservation(self):
+        import json
+        from unittest.mock import patch
+        from scripts.execution import application
+        def terraform(*arguments, **kwargs):
+            return json.dumps({"resource_changes": []}) if arguments[0] == "show" else ""
+        with patch.object(application, "validated_inventory", return_value={"repositories": []}), \
+                patch.object(application.subprocess, "check_output", return_value=json.dumps({"terraform_version": application.TERRAFORM_VERSION})), \
+                patch.object(application.subprocess, "run"), \
+                patch.object(application, "git_head", return_value="accepted"), \
+                patch.object(application, "input_digests", return_value={}), \
+                patch.object(application, "settings_plan", return_value={}), \
+                patch.object(application, "write_receipt"), \
+                patch.object(application, "WORK_DIR") as work, \
+                patch.object(application, "PLAN") as plan, \
+                patch.object(application, "terraform", side_effect=terraform) as calls, \
+                patch.object(application, "require_accepted_main") as accepted, \
+                patch.object(application, "ruleset_snapshot") as snapshots, \
+                patch.object(application, "require_representable_rulesets") as preservation, \
+                patch.object(application, "import_rulesets"), \
+                patch.object(application, "apply_settings") as writes:
+            work.glob.return_value = []
+            plan.read_bytes.return_value = b"read-only plan"
+            receipt = application.preflight(False)
+        self.assertEqual(receipt["status"], "planned")
+        self.assertIs(receipt["privileged"], False)
+        self.assertIs(receipt["remote_writes"], False)
+        self.assertNotIn("ruleset_before_images", receipt)
+        self.assertNotIn("provider_schema_digest", receipt)
+        self.assertEqual([call.args[0] for call in calls.call_args_list], ["plan", "show"])
+        accepted.assert_not_called()
+        snapshots.assert_not_called()
+        preservation.assert_not_called()
+        writes.assert_not_called()
+
+    def test_bound_saved_plan_bytes_cannot_be_replaced_on_replay(self):
+        import hashlib
+        from unittest.mock import patch
+        from scripts.execution import application
+        receipt = {"status": "planned", "privileged": True, "commit": "accepted", "input_digests": {},
+                   "plan_digest": hashlib.sha256(b"reviewed plan").hexdigest()}
+        with patch.object(application, "git_head", return_value="accepted"), \
+                patch.object(application, "input_digests", return_value={}), patch.object(application, "PLAN") as plan:
+            plan.read_bytes.return_value = b"reviewed plan"
+            application.verify_receipt(receipt)
+            plan.read_bytes.return_value = b"replacement plan"
+            with self.assertRaisesRegex(ValueError, "saved plan changed"):
+                application.verify_receipt(receipt)
+
     def test_settings_discovery_failure_never_patches_an_earlier_repository(self):
         from unittest.mock import patch
         from scripts.execution.application import settings_plan
@@ -167,9 +241,10 @@ class ApplicationBoundaryTests(unittest.TestCase):
         from scripts.execution.application import apply
         settings = {repository["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
                     for repository in load_inventory()["repositories"]}
-        receipt = {"settings": settings, "completed": []}
+        receipt = {"settings": settings, "ruleset_before_images": {}, "completed": []}
         with patch("scripts.execution.application.require_accepted_main"), patch("scripts.execution.application.verify_receipt"), \
                 patch("scripts.execution.application.settings_plan", return_value=settings), \
+                patch("scripts.execution.application.require_ruleset_snapshot"), \
                 patch("scripts.execution.application.write_receipt"), patch("scripts.execution.application.apply_settings"), \
                 patch("scripts.execution.application.terraform", side_effect=subprocess.CalledProcessError(1, ["terraform"])), \
                 patch("scripts.execution.application.audit", return_value=["bijux-pollenomics: incomplete ruleset"]) as live_audit:
@@ -181,6 +256,42 @@ class ApplicationBoundaryTests(unittest.TestCase):
         self.assertIn("ruleset:bijux-pollenomics", receipt["outstanding"])
         self.assertIn("audit:family", receipt["outstanding"])
         self.assertIn("ruleset:bijux-iac", receipt["completed"])
+
+    def test_ruleset_drift_refuses_before_any_settings_or_terraform_write(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        receipt = {"settings": {}, "ruleset_before_images": {}, "completed": []}
+        with patch.object(application, "require_accepted_main"), patch.object(application, "verify_receipt"), \
+                patch.object(application, "settings_plan", return_value={}), \
+                patch.object(application, "require_ruleset_snapshot", side_effect=ValueError("live rulesets changed")), \
+                patch.object(application, "apply_settings") as settings_write, \
+                patch.object(application, "terraform") as terraform:
+            with self.assertRaisesRegex(ValueError, "live rulesets changed"):
+                application.apply(receipt)
+        settings_write.assert_not_called()
+        terraform.assert_not_called()
+
+    def test_ruleset_drift_during_settings_writes_retains_partial_ledger(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        inventory = load_inventory()
+        settings = {r["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
+                    for r in inventory["repositories"]}
+        receipt = {"settings": settings, "ruleset_before_images": {}, "completed": []}
+        with patch.object(application, "require_accepted_main"), patch.object(application, "verify_receipt"), \
+                patch.object(application, "settings_plan", return_value=settings), \
+                patch.object(application, "require_ruleset_snapshot", side_effect=[None, ValueError("live rulesets changed")]) as read, \
+                patch.object(application, "write_receipt"), patch.object(application, "apply_settings"), \
+                patch.object(application, "terraform") as terraform, \
+                patch.object(application, "audit", return_value=["bijux-iac: concurrent ruleset edit"]):
+            with self.assertRaisesRegex(ValueError, "live rulesets changed"):
+                application.apply(receipt)
+        self.assertEqual(read.call_count, 2)
+        terraform.assert_not_called()
+        self.assertEqual(receipt["status"], "failed")
+        self.assertIn("settings:bijux-iac", receipt["completed"])
+        self.assertIn("ruleset:bijux-iac", receipt["outstanding"])
+        self.assertIn("audit:family", receipt["outstanding"])
 
     def test_standalone_settings_reject_arbitrary_scope_before_patch(self):
         from unittest.mock import patch
