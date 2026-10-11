@@ -44,6 +44,19 @@ jobs:
           version: '0.11.17'
           enable-cache: false
 
+      - name: Provision action reference parser
+        if: ${{ matrix.check == 'standard' }}
+        uses: ruby/setup-ruby@e81a8fa391b11a595c1b7ed84177cc0fe02faf83
+        with:
+          ruby-version: '3.3.12'
+
+      - name: Admit action reference parser runtime
+        if: ${{ matrix.check == 'standard' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -ryaml -rjson -e 'abort "Ruby 3.3.12 required" unless RUBY_VERSION == "3.3.12"; abort "Psych structural parser required" unless YAML.respond_to?(:parse_stream) && YAML.respond_to?(:safe_load); puts JSON.generate({ruby: RUBY_VERSION, psych: Psych::VERSION})'
+
       - name: Run matrix check
         shell: bash
         run: |
