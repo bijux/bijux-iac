@@ -8,7 +8,7 @@ import subprocess
 
 from scripts.github.api import gh_api_json
 from scripts.inventory.repositories import ROOT, validated_inventory
-from scripts.inventory.publication import WORKFLOWS, publisher_declarations, validate_publisher, workflow_policy
+from scripts.inventory.publication import WORKFLOWS, documentation_destination, publisher_declarations, validate_publisher, workflow_policy
 
 
 def publication_mismatches(policy, declarations: dict, documents: dict) -> list[str]:
@@ -65,7 +65,10 @@ def audit(inventory: dict, actor_id: str) -> dict:
             observation["mismatches"].append(f"workflow audit unavailable: {error}")
         if declarations[name]:
             try:
-                variable = gh_api_json(f"repos/bijux/{name}/actions/variables/BIJUX_PUBLICATION_ACTOR_ID")
+                destination = documentation_destination(inventory, name)
+                observation["documentation_destination"] = destination
+                trust_repository = destination['repository']
+                variable = gh_api_json(f"repos/bijux/{trust_repository}/actions/variables/BIJUX_PUBLICATION_ACTOR_ID")
                 if variable.get("value") != actor_id:
                     observation["mismatches"].append("publisher trust does not identify the configured App bot")
             except (ValueError, subprocess.CalledProcessError) as error:
