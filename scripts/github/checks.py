@@ -1,6 +1,7 @@
 """Verify and retain the accepted GitHub Actions producers before enforcement."""
 from __future__ import annotations
 
+import base64
 import json
 import re
 import subprocess
@@ -8,6 +9,7 @@ import subprocess
 from scripts.github.api import gh_api_json
 from scripts.github.audit import STATUS_APP_ID
 from scripts.inventory.repositories import ROOT, validated_inventory
+from scripts.inventory.workflows import merged_workflow_execution
 
 PR_ONLY_CHECKS = {"policy / pr approval"}
 
@@ -38,6 +40,49 @@ def latest_producers(commit: str, runs: list[dict]) -> dict[str, dict]:
     return latest
 
 
+def accepted_merge(repository: str, main: dict, prs: list[dict]) -> dict:
+    """Bind PR evidence to this exact main merge, never an older accepted head."""
+    matches = [pr for pr in prs if pr.get("merged_at") and pr.get("merge_commit_sha") == main["sha"]]
+    if len(matches) != 1:
+        raise ValueError("current main must identify exactly one accepted pull request")
+    pr = matches[0]
+    parents = main.get("parents", [])
+    head = pr.get("head", {}).get("sha") if isinstance(pr.get("head"), dict) else None
+    if (not isinstance(parents, list) or len(parents) != 2
+            or not all(isinstance(parent, dict) and isinstance(parent.get("sha"), str)
+                       and re.fullmatch(r"[0-9a-f]{40}", parent["sha"]) for parent in parents)
+            or parents[1].get("sha") != head
+            or not isinstance(pr.get("base"), dict) or pr["base"].get("ref") != "main"
+            or pr["base"].get("sha") != parents[0].get("sha")
+            or not isinstance(pr["base"].get("repo"), dict)
+            or pr["base"]["repo"].get("full_name") != f"bijux/{repository}"
+            or pr.get("state") != "closed" or type(pr.get("number")) is not int
+            or not isinstance(head, str) or not re.fullmatch(r"[0-9a-f]{40}", head)):
+        raise ValueError("accepted verification requires an exact ancestry-preserving main merge")
+    if not isinstance(pr.get("user"), dict) or not isinstance(pr["user"].get("login"), str):
+        raise ValueError("accepted pull request must identify its original author")
+    if (pr["user"]["login"] == "dependabot[bot]"
+            or (pr["user"]["login"] == "github-actions[bot]"
+                and pr["head"].get("ref") == "automation/dependency-lock-refresh")):
+        raise ValueError("a dependency notification cannot establish accepted verification")
+    return pr
+
+
+def verify_remote_execution(repository: str, commit: str, expected: dict) -> None:
+    response = gh_api_json(f"repos/bijux/{repository}/contents/.github/standards/repo-config.manifest.json?ref={commit}")
+    if not isinstance(response, dict) or response.get("encoding") != "base64":
+        raise ValueError("accepted consumer workflow declaration is unavailable")
+    manifest = json.loads(base64.b64decode(response["content"]).decode("utf-8"))
+    if (not isinstance(manifest, dict) or not isinstance(manifest.get("repositories"), list)
+            or not all(isinstance(entry, dict) for entry in manifest["repositories"])):
+        raise ValueError("accepted consumer workflow declaration is malformed")
+    entries = [entry for entry in manifest["repositories"] if entry.get("name") == repository]
+    if len(entries) != 1 or not isinstance(entries[0].get("workflow_execution_policy"), dict):
+        raise ValueError("accepted consumer workflow declaration is malformed")
+    if any(entries[0]["workflow_execution_policy"].get(key) != value for key, value in expected.items()):
+        raise ValueError("accepted consumer has not adopted the declared workflow execution policy")
+
+
 def producer_evidence(inventory: dict) -> dict:
     receipt = {"remote_writes": False, "repositories": [], "errors": []}
     for repository in inventory["repositories"]:
@@ -45,27 +90,31 @@ def producer_evidence(inventory: dict) -> dict:
         observation = {"repository": name, "checks": [], "errors": []}
         receipt["repositories"].append(observation)
         try:
-            commit = gh_api_json(f"repos/bijux/{name}/commits/main")["sha"]
+            main_commit = gh_api_json(f"repos/bijux/{name}/commits/main")
+            commit = main_commit["sha"]
             if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
                 raise ValueError("main must resolve to an immutable accepted commit")
             observation["main_commit"] = commit
-            main = latest_producers(commit, check_runs(name, commit))
-            prs = gh_api_json(f"repos/bijux/{name}/pulls?state=closed&base=main&per_page=100&sort=updated&direction=desc")
+            execution = merged_workflow_execution(inventory, repository)
+            if execution["main_verification"] not in {"accepted-pull-request", "existing-events"}:
+                raise ValueError("unknown main verification policy")
+            accepted_only = execution["main_verification"] == "accepted-pull-request"
+            main = {} if accepted_only else latest_producers(commit, check_runs(name, commit))
+            prs = gh_api_json(f"repos/bijux/{name}/commits/{commit}/pulls?per_page=100")
             if not isinstance(prs, list) or not all(isinstance(pr, dict) for pr in prs):
                 raise ValueError("malformed accepted PR response")
-            merged = max((pr for pr in prs if pr.get("merged_at")),
-                         key=lambda pr: pr["merged_at"], default=None)
-            accepted_pr = {}
-            if merged:
-                pr_sha = merged["head"]["sha"]
-                if not isinstance(pr_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", pr_sha):
-                    raise ValueError("accepted PR must identify an immutable head")
-                observation["accepted_pr"] = {"number": merged["number"], "commit": pr_sha}
-                accepted_pr = latest_producers(pr_sha, check_runs(name, pr_sha))
+            merged = accepted_merge(name, main_commit, prs)
+            if accepted_only:
+                verify_remote_execution(name, commit, execution)
+            pr_sha = merged["head"]["sha"]
+            observation["verification_source"] = "accepted-pull-request" if accepted_only else "existing-events"
+            observation["accepted_pr"] = {"number": merged["number"], "commit": pr_sha, "merge_commit": commit}
+            accepted_pr = latest_producers(pr_sha, check_runs(name, pr_sha))
             for context in repository["governance"]["branch_protection"]["required_status_checks"]:
-                # Prefer evidence on current main. PR-only producers are observed
-                # on accepted PR heads; a failed main retry cannot borrow PR success.
-                run = accepted_pr.get(context) if context in PR_ONLY_CHECKS else main.get(context)
+                # PR-only verification requires exact accepted merge ancestry and
+                # adoption of that execution policy. Existing-event repositories
+                # retain their current-main result, including failed retries.
+                run = accepted_pr.get(context) if accepted_only or context in PR_ONLY_CHECKS else main.get(context)
                 if run is None and context not in PR_ONLY_CHECKS:
                     run = accepted_pr.get(context)
                 if run is None or run.get("status") != "completed" or run.get("conclusion") != "success":
@@ -73,6 +122,9 @@ def producer_evidence(inventory: dict) -> dict:
                     continue
                 observation["checks"].append({"context": context, "commit": run["head_sha"],
                                               "check_run_id": run["id"], "app_id": run["app"]["id"]})
+            current = gh_api_json(f"repos/bijux/{name}/commits/main")
+            if not isinstance(current, dict) or current.get("sha") != commit:
+                raise ValueError("main changed while accepted verification evidence was collected")
         except (KeyError, TypeError, ValueError, subprocess.CalledProcessError) as error:
             observation["errors"].append(f"producer discovery unavailable: {error}")
         receipt["errors"].extend(f"{name}: {error}" for error in observation["errors"])

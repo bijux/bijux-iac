@@ -99,9 +99,9 @@ def validate_delivery(name: str, delivery: object) -> None:
 def validate_inventory(inventory: object) -> None:
     if not isinstance(inventory, dict):
         fail("inventory must be an object")
-    require_keys("inventory", inventory, {"version", "classes", "repository_settings_defaults", "repositories"})
-    if type(inventory.get("version")) is not int or inventory["version"] != 3:
-        fail("inventory version must be 3")
+    require_keys("inventory", inventory, {"version", "classes", "repository_settings_defaults", "workflow_execution_defaults", "repositories"})
+    if type(inventory.get("version")) is not int or inventory["version"] != 4:
+        fail("inventory version must be 4")
 
     classes = inventory.get("classes")
     if not isinstance(classes, dict):
@@ -169,7 +169,7 @@ def validate_inventory(inventory: object) -> None:
             if value == repository_settings_defaults[key]:
                 fail(f"{name}: redundant settings override {key}")
         validate_common_settings(name, merged_repository_settings(inventory, repo))
-        require_keys(f"{name}: governance", governance, {"branch_protection"})
+        require_keys(f"{name}: governance", governance, {"branch_protection", "workflow_execution"})
         if not isinstance(governance, dict):
             fail(f"{name}: missing governance object")
         branch = governance.get("branch_protection")
@@ -215,8 +215,10 @@ def validate_inventory(inventory: object) -> None:
         fail(f"missing governed repositories: {sorted(missing_repositories)}")
 
     from scripts.inventory.publication import publisher_declarations
+    from scripts.inventory.workflows import validate_workflow_execution
     try:
         publisher_declarations(inventory)
+        validate_workflow_execution(inventory)
     except ValueError as error:
         fail(str(error))
 

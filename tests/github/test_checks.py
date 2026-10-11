@@ -23,11 +23,12 @@ class AcceptedProducerTests(unittest.TestCase):
         self.inventory = load_inventory()
         self.contexts = self.inventory["repositories"][0]["governance"]["branch_protection"]["required_status_checks"]
         self.inventory["repositories"] = self.inventory["repositories"][:1]
+        self.inventory["repositories"][0]["governance"]["workflow_execution"] = {"main_verification": "existing-events"}
 
     def evidence(self, main_runs, pr_runs=(), prs=None):
         if prs is None:
-            prs = [{"number": 1, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}}]
-        with patch.object(checks, "gh_api_json", side_effect=[{"sha": MAIN}, prs]), \
+            prs = [{"number": 1, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}, "merge_commit_sha": MAIN, "base": {"ref": "main", "sha": "d" * 40, "repo": {"full_name": "bijux/bijux-iac"}}, "state": "closed", "user": {"login": "bijux"}}]
+        with patch.object(checks, "gh_api_json", side_effect=[{"sha": MAIN, "parents": [{"sha": "d" * 40}, {"sha": PR}]}, prs, {"sha": MAIN}]), \
                 patch.object(checks, "check_runs", side_effect=[main_runs, list(pr_runs)]):
             return checks.producer_evidence(self.inventory)
 
@@ -64,9 +65,9 @@ class AcceptedProducerTests(unittest.TestCase):
                 receipt = self.evidence(runs)
                 self.assertEqual(len(receipt["errors"]), len(self.contexts))
 
-    def test_most_recent_merge_wins_over_pr_api_update_order(self):
-        older = {"number": 1, "merged_at": "2026-10-09T12:00:00Z", "head": {"sha": "c" * 40}}
-        newer = {"number": 2, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}}
+    def test_unrelated_merge_cannot_replace_the_current_main_pr(self):
+        older = {"number": 1, "merged_at": "2026-10-09T12:00:00Z", "head": {"sha": "c" * 40}, "merge_commit_sha": "e" * 40}
+        newer = {"number": 2, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}, "merge_commit_sha": MAIN, "base": {"ref": "main", "sha": "d" * 40, "repo": {"full_name": "bijux/bijux-iac"}}, "state": "closed", "user": {"login": "bijux"}}
         receipt = self.evidence([run(context) for context in self.contexts], [run("policy / pr approval", PR)], [older, newer])
         self.assertEqual(receipt["repositories"][0]["accepted_pr"]["number"], 2)
         self.assertFalse(receipt["errors"])

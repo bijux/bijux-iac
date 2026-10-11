@@ -236,9 +236,12 @@ saved plan remains on the same runner for apply; retries reconstruct live state
 and create a new preflight. Partial failure is recorded and audited without
 rollback. Do not place tokens in inventory, shell history, or committed artifacts.
 
-Before enforcing a required context, producer discovery checks its latest attempt
-on the exact current `main` commit, falling back to an accepted PR head only when
-the producer does not run on main. The PR approval producer always uses a PR head.
+Before enforcing a required context, producer discovery binds the current normal
+main merge to its exact accepted human PR head and verifies that the consumer
+adopted the declared execution policy. Required checks must be completed and
+successful at that head; a notification cannot replace verification. Masterclass
+retains its existing-event producer selection. See
+[workflow execution](docs/workflow-execution.md) for event and ownership rules.
 A failed, cancelled, skipped, or pending retry cannot borrow an earlier success.
 The evidence records each context, commit, check-run ID, and producing App in
 `artifacts/governance/producers.json` and the privileged preflight receipt.
