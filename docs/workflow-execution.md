@@ -6,6 +6,10 @@ human pull requests, and dependency changes consolidated by repository owners.
 Each repository exposes the same `governance.workflow_execution` override object.
 Masterclass retains `main_verification: existing-events` because its existing
 human verification and documentation deployment are managed separately.
+All twelve repositories expose the same manual `deploy-docs` entrypoint.
+Documentation ownership is declared separately: Std and IaC currently use Hub
+sections and can later adopt owned sites without a different workflow. Genomics
+has an owned destination whose first publication requires Pages readiness.
 
 | Event | Execution | Acceptance evidence |
 | --- | --- | --- |

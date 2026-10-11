@@ -21,17 +21,19 @@ class PublicationBoundaryTests(unittest.TestCase):
         inventory = load_inventory()
         declarations = publisher_declarations(inventory)
         self.assertEqual(len(declarations), 12)
-        self.assertEqual(declarations["bijux-iac"], {})
-        self.assertEqual(declarations["bijux-std"], {})
+        self.assertEqual(declarations["bijux-iac"]["deploy-docs"]["destination"],
+                         {"repository": "bijux.github.io", "path": "/infrastructure/"})
+        self.assertEqual(declarations["bijux-std"]["deploy-docs"]["destination"],
+                         {"repository": "bijux.github.io", "path": "/standards/"})
         validate_request(inventory, "bijux-core", "release-pypi", "a" * 40, "v1.2.3")
         validate_request(inventory, "bijux.github.io", "deploy-docs", "a" * 40, "")
         validate_request(inventory, "bijux-genomics", "deploy-docs", "a" * 40, "", require_published=False)
-        with self.assertRaises(ValueError):
-            validate_request(inventory, "bijux-iac", "deploy-docs", "a" * 40, "", require_published=False)
+        validate_request(inventory, "bijux-iac", "deploy-docs", "a" * 40, "")
+        validate_request(inventory, "bijux-genomics", "deploy-docs", "a" * 40, "")
         for repository, workflow, commit, tag in [
             ("outside-family", "deploy-docs", "a" * 40, ""),
             ("bijux-iac", "release-github", "a" * 40, "v1.2.3"),
-            ("bijux-genomics", "deploy-docs", "a" * 40, ""),
+            ("bijux-genomics", "release-ghcr", "a" * 40, "v1.2.3"),
             ("bijux.github.io", "release-pypi", "a" * 40, "v1.2.3"),
             ("bijux-canon", "release-crates", "a" * 40, "v1.2.3"),
             ("bijux-canon", "release-pypi", "main", "v1.2.3"),
@@ -54,14 +56,17 @@ class PublicationBoundaryTests(unittest.TestCase):
         manifest = json.loads((ROOT / ".github/standards/repo-config.manifest.json").read_text())
         entry = next(value for value in manifest["repositories"] if value["name"] == "bijux-core")
         entry["workflow_execution_policy"]["publication_entrypoints"]["release-pypi"] = {"mode": "manual-only"}
-        with patch.object(declarations, "ROOT") as root:
+        policy = workflow_policy()
+        with patch.object(declarations, "workflow_policy", return_value=policy), \
+                patch.object(declarations, "ROOT") as root:
             root.__truediv__.return_value.read_text.return_value = json.dumps(manifest)
             with self.assertRaisesRegex(SystemExit, "manual IaC control"):
                 validate_inventory(load_inventory())
 
-    def test_inventory_requires_explicit_publisher_free_foundations(self):
+    def test_inventory_requires_explicit_foundation_documentation_routes(self):
         from scripts.inventory import publication as declarations
         manifest = json.loads((ROOT / ".github/standards/repo-config.manifest.json").read_text())
+        policy = workflow_policy()
         for name in ("bijux-iac", "bijux-std"):
             for missing in ("publication_entrypoints", "workflow_execution_policy"):
                 changed = copy.deepcopy(manifest)
@@ -70,7 +75,9 @@ class PublicationBoundaryTests(unittest.TestCase):
                     del entry[missing]
                 else:
                     del entry["workflow_execution_policy"][missing]
-                with self.subTest(repository=name, missing=missing), patch.object(declarations, "ROOT") as root:
+                with self.subTest(repository=name, missing=missing), \
+                        patch.object(declarations, "workflow_policy", return_value=policy), \
+                        patch.object(declarations, "ROOT") as root:
                     root.__truediv__.return_value.read_text.return_value = json.dumps(changed)
                     with self.assertRaisesRegex(ValueError, "explicit publication capability"):
                         declarations.publisher_declarations(load_inventory())
@@ -95,11 +102,14 @@ class PublicationBoundaryTests(unittest.TestCase):
         with patch.object(publication, "require_accepted_main"), \
                 patch.object(publication, "workflow_policy", return_value=policy), \
                 patch.object(policy, "parse_workflow", return_value=document), \
-                patch.object(publication.runpy, "run_path", return_value={"admit": admit}), \
+                patch.object(publication.runpy, "run_path", return_value={"admit": admit, "POLICY": policy}), \
                 patch.dict(os.environ, {"PUBLICATION_CONTROLLER_ACTOR": "bijux-publication[bot]",
                                        "PUBLICATION_APP_ID": "12", "PUBLICATION_CONTROLLER_ACTOR_ID": "123"}), \
-                patch.object(publication, "gh_api_json", side_effect=[app, {"content": encoded}, {"value": "123"}]):
-            self.assertEqual(publication.request("bijux.github.io", "deploy-docs", "a" * 40, ""), {"commit": "a" * 40})
+                patch.object(publication, "gh_api_json", side_effect=[app, {"value": "123"}, {"content": encoded},
+                                                                      {"sha": "a" * 40}]):
+            receipt = publication.request("bijux.github.io", "deploy-docs", "a" * 40, "")
+            self.assertEqual(receipt["commit"], "a" * 40)
+            self.assertEqual(receipt["destination"], {"repository": "bijux.github.io", "commit": "a" * 40, "path": "/"})
         environment = admit.call_args.args[0]
         self.assertEqual(environment["PUBLICATION_CONTROLLER_ACTOR_ID"], "123")
         self.assertEqual(environment["PUBLICATION_ACTOR_ID"], "123")
@@ -264,7 +274,7 @@ class PublicationBoundaryTests(unittest.TestCase):
         self.assertNotIn("push:", workflow)
         self.assertLess(workflow.index('[[ "$APPLY_REF" == "refs/heads/main" ]]'), workflow.index("environment: publication-control"))
         self.assertLess(workflow.index("publication validate"), workflow.index("secrets.BIJUX_PUBLICATION_APP_PRIVATE_KEY"))
-        self.assertIn("repositories: ${{ inputs.repository }}", workflow)
+        self.assertIn("repositories: ${{ steps.destination.outputs.repository }}", workflow)
         self.assertIn("default: preflight", workflow)
         self.assertIn("options: [verify-credential, preflight, dispatch]", workflow)
         self.assertIn('publication "$PUBLICATION_OPERATION"', workflow)

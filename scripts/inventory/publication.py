@@ -20,16 +20,20 @@ def publisher_declarations(inventory: dict) -> dict:
     if len(entries) != len(FAMILY_REPOSITORIES) or {entry["name"] for entry in entries} != set(FAMILY_REPOSITORIES):
         raise ValueError("publication standard must declare exactly the governed family")
     declarations = {}
+    canonical = workflow_policy()
     for entry in entries:
         allowed = WORKFLOWS & set(entry.get("workflow_allowlist", []))
         policy = entry.get("workflow_execution_policy")
         if not isinstance(policy, dict) or not isinstance(policy.get("publication_entrypoints"), dict):
-            raise ValueError(f"{entry['name']}: explicit publication capability is required, including publisher-free foundations")
+            raise ValueError(f"{entry['name']}: explicit publication capability is required, including Hub-routed foundations")
         declared = policy["publication_entrypoints"]
-        if set(declared) != allowed or any(value != ({"mode": "manual-only", "controller": "iac", "refs": "main-only"}
-                                                    if name == "deploy-docs" else {"mode": "manual-only", "controller": "iac"})
-                                           for name, value in declared.items()):
+        if set(declared) != allowed:
             raise ValueError(f"{entry['name']}: applicable publishers must require manual IaC control")
+        for name, value in declared.items():
+            if name == "deploy-docs":
+                canonical.documentation_destination(entry)
+            elif value != {"mode": "manual-only", "controller": "iac"}:
+                raise ValueError(f"{entry['name']}: applicable publishers must require manual IaC control")
         declarations[entry["name"]] = declared
     if {entry["name"] for entry in inventory["repositories"]} != set(declarations):
         raise ValueError("publication inventory and accepted standard disagree")
@@ -42,13 +46,19 @@ def validate_request(inventory: dict, repository: str, workflow: str, commit: st
         raise ValueError("publication requires an applicable family publisher and immutable commit")
     selected = next(entry for entry in inventory["repositories"] if entry["name"] == repository)
     surface = "documentation" if workflow == "deploy-docs" else "packages"
-    if require_published and selected["delivery"][surface] != "published":
+    if require_published and workflow != "deploy-docs" and selected["delivery"][surface] != "published":
         raise ValueError("publication capability is not active for this repository")
     if workflow == "deploy-docs":
         if tag:
             raise ValueError("documentation publication does not accept a release tag")
     elif not re.fullmatch(r"v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", tag):
         raise ValueError("release publication requires an explicit version tag")
+
+
+def documentation_destination(inventory: dict, repository: str) -> dict:
+    """Resolve only the immutable accepted family documentation routes."""
+    declaration = publisher_declarations(inventory)[repository]["deploy-docs"]
+    return dict(declaration["destination"])
 
 
 def validate_publisher(policy, workflow: str, document: dict) -> None:
