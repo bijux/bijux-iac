@@ -14,6 +14,7 @@ from scripts.github.api import gh_api_json, list_rulesets
 from scripts.github.checks import require_producers
 from scripts.github.settings import apply_settings
 from scripts.github.rulesets import require_ruleset_snapshot, ruleset_snapshot
+from scripts.github.ruleset_transport import API_VERSION, api_plan, apply_api_operation
 from scripts.terraform.imports import import_rulesets, WORK_DIR
 from scripts.terraform.plans import require_representable_rulesets, validate_ruleset_changes
 from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
@@ -21,6 +22,7 @@ from scripts.inventory.repositories import ROOT, validated_inventory, merged_rep
 ARTIFACTS = ROOT / "artifacts/governance"
 RECEIPT = ARTIFACTS / "receipt.json"
 PLAN = WORK_DIR / "governance.tfplan"
+API_PLAN = ARTIFACTS / "rulesets.json"
 TERRAFORM_VERSION = "1.16.5"
 
 
@@ -114,7 +116,11 @@ def verify_credential() -> dict:
     return receipt
 
 
-def preflight(privileged: bool) -> dict:
+def preflight(privileged: bool, transport: str = "terraform") -> dict:
+    if transport not in {"terraform", "github-api"} or transport == "github-api" and not privileged:
+        raise ValueError("API ruleset transport requires a protected accepted-main preflight")
+    if transport == "github-api":
+        return api_preflight()
     validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
     inventory = validated_inventory()
     producers = None
@@ -162,12 +168,48 @@ def preflight(privileged: bool) -> dict:
     return receipt
 
 
+def api_preflight() -> dict:
+    """Plan only check additions and the retained selector, with full API custody."""
+    validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
+    require_accepted_main()
+    inventory = validated_inventory()
+    producers = require_producers(inventory)
+    receipt = {"status": "preflight", "commit": git_head(), "privileged": True,
+               "remote_writes": False, "transport": "github-api", "api_version": API_VERSION,
+               "input_digests": input_digests(), "settings": settings_plan(inventory),
+               "producer_evidence": producers, "ruleset_before_images": ruleset_snapshot(inventory),
+               "completed": [], "outstanding": []}
+    write_receipt(receipt)
+    if any(compare_settings(name, settings["after"], settings["before"])
+           for name, settings in receipt["settings"].items()):
+        raise ValueError("API check-only plan refuses unrelated repository settings drift")
+    subprocess.run(["make", "contract-tests"], cwd=ROOT, check=True)
+    operations = api_plan(inventory, receipt["ruleset_before_images"])
+    ARTIFACTS.mkdir(parents=True, exist_ok=True)
+    API_PLAN.write_text(json.dumps(operations, indent=2, sort_keys=True, allow_nan=False) + "\n")
+    require_ruleset_snapshot(inventory, receipt["ruleset_before_images"])
+    receipt.update(status="planned", ruleset_plan=operations,
+                   plan_digest=hashlib.sha256(API_PLAN.read_bytes()).hexdigest())
+    write_receipt(receipt)
+    return receipt
+
+
 def verify_receipt(receipt: dict) -> None:
     if receipt.get("status") != "planned" or receipt.get("privileged") is not True:
         raise ValueError("application requires a successful privileged preflight")
     if receipt.get("commit") != git_head() or receipt.get("input_digests") != input_digests():
         raise ValueError("preflight inputs changed; re-plan accepted main")
-    if receipt.get("plan_digest") != hashlib.sha256(PLAN.read_bytes()).hexdigest():
+    if receipt.get("transport") == "github-api":
+        expected = api_plan(validated_inventory(), receipt.get("ruleset_before_images"))
+        if (receipt.get("api_version") != API_VERSION or receipt.get("ruleset_plan") != expected
+                or json.loads(API_PLAN.read_text()) != expected):
+            raise ValueError("API saved plan differs from its complete inventory-bound before-images")
+        plan_bytes = API_PLAN.read_bytes()
+    elif receipt.get("transport", "terraform") == "terraform":
+        plan_bytes = PLAN.read_bytes()
+    else:
+        raise ValueError("unknown ruleset transport")
+    if receipt.get("plan_digest") != hashlib.sha256(plan_bytes).hexdigest():
         raise ValueError("saved plan changed; re-plan accepted main")
 
 
@@ -198,9 +240,17 @@ def apply(receipt: dict) -> None:
             receipt["outstanding"].remove(operation)
             write_receipt(receipt)
         # Settings writes can take time. Re-read the bound rulesets immediately
-        # before Terraform as well, retaining partial operations on refusal.
+        # before the ruleset transport as well, retaining partial operations on refusal.
         require_ruleset_snapshot(inventory, receipt["ruleset_before_images"])
-        terraform("apply", "-input=false", str(PLAN))
+        if receipt.get("transport") == "github-api":
+            for operation in receipt["ruleset_plan"]:
+                apply_api_operation(operation)
+                name = f"ruleset:{operation['repository']}"
+                receipt["completed"].append(name)
+                receipt["outstanding"].remove(name)
+                write_receipt(receipt)
+        else:
+            terraform("apply", "-input=false", str(PLAN))
         receipt["status"] = "applied"
     except Exception as error:
         receipt["status"] = "failed"
@@ -212,7 +262,8 @@ def apply(receipt: dict) -> None:
             receipt["audit"] = errors
             for repository in inventory["repositories"]:
                 operation = f"ruleset:{repository['name']}"
-                if operation in receipt["outstanding"] and not any(error.startswith(repository['name'] + ":") for error in errors):
+                if (receipt.get("transport") != "github-api" and operation in receipt["outstanding"]
+                        and not any(error.startswith(repository['name'] + ":") for error in errors)):
                     receipt["completed"].append(operation)
                     receipt["outstanding"].remove(operation)
             if not errors:
@@ -232,19 +283,24 @@ def apply(receipt: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", choices=["plan", "verify-credential", "preflight", "apply"])
+    parser.add_argument("--transport", choices=["terraform", "github-api"], default="terraform")
     args = parser.parse_args()
     if args.operation == "apply":
         apply(json.loads(RECEIPT.read_text()))
     else:
         write_receipt({"status": "preflight", "commit": git_head(),
                        "input_digests": input_digests(), "remote_writes": False})
-        if PLAN.exists():
-            PLAN.unlink()
+        for plan in (PLAN, API_PLAN):
+            if plan.exists():
+                plan.unlink()
         try:
             if args.operation == "verify-credential":
                 verify_credential()
             else:
-                preflight(args.operation == "preflight")
+                if args.transport == "terraform":
+                    preflight(args.operation == "preflight")
+                else:
+                    preflight(args.operation == "preflight", args.transport)
         except Exception as error:
             receipt = json.loads(RECEIPT.read_text())
             receipt.update(status="credential-verification-failed" if args.operation == "verify-credential" else "preflight-failed", error=str(error))

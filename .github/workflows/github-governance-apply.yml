@@ -10,6 +10,13 @@ on:
         required: true
         options: [verify-credential, preflight, apply]
 
+      ruleset_transport:
+        description: Retain complete API protections or require full locked-provider representation
+        type: choice
+        default: github-api
+        required: true
+        options: [github-api, terraform]
+
 permissions:
   contents: read
 
@@ -29,6 +36,7 @@ jobs:
           APPLY_REF: ${{ github.ref }}
           APPLY_SHA: ${{ github.sha }}
           APPLY_OPERATION: ${{ inputs.operation }}
+          APPLY_TRANSPORT: ${{ inputs.ruleset_transport }}
         run: |
           set -euo pipefail
           [[ "$APPLY_REPOSITORY" == "bijux/bijux-iac" ]] || exit 1
@@ -36,6 +44,10 @@ jobs:
           [[ "$APPLY_REF" == "refs/heads/main" ]] || exit 1
           case "$APPLY_OPERATION" in
             verify-credential|preflight|apply) ;;
+            *) exit 1 ;;
+          esac
+          case "$APPLY_TRANSPORT" in
+            github-api|terraform) ;;
             *) exit 1 ;;
           esac
           accepted_sha="$(gh api repos/bijux/bijux-iac/commits/main --jq .sha)"
@@ -63,14 +75,16 @@ jobs:
         if: ${{ inputs.operation == 'verify-credential' }}
         run: python3 -m scripts.execution.application verify-credential
       - name: Setup Terraform
-        if: ${{ inputs.operation != 'verify-credential' }}
+        if: ${{ inputs.operation != 'verify-credential' && inputs.ruleset_transport == 'terraform' }}
         uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: 1.16.5
           terraform_wrapper: false
       - name: Complete accepted-main preflight before the first write
         if: ${{ inputs.operation != 'verify-credential' }}
-        run: python3 -m scripts.execution.application preflight
+        env:
+          RULESET_TRANSPORT: ${{ inputs.ruleset_transport }}
+        run: python3 -m scripts.execution.application preflight --transport "$RULESET_TRANSPORT"
       - name: Apply the bound settings and saved ruleset plan, then audit the family
         if: ${{ inputs.operation == 'apply' }}
         run: python3 -m scripts.execution.application apply
