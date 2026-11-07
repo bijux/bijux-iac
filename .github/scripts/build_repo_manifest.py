@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import argparse
+import copy
 import os
 import shlex
 import subprocess
@@ -55,6 +57,7 @@ MANAGED_REPOSITORIES = [
     "bijux-phylogenetics",
     "bijux-pollenomics",
     "bijux-proteomics",
+    "bijux-ro-crate-node",
     "bijux-gnss",
     "bijux-std",
     "bijux.github.io",
@@ -98,9 +101,12 @@ def release_env_value(entries: list[dict], key: str, default: bool = False) -> b
     return default
 
 
-def derive_workflow_allowlist(repo_name: str, release_env: list[dict], wrappers: dict, inventory: dict[str, Any]) -> list[str]:
+def derive_workflow_allowlist(repo_name: str, release_env: list[dict], wrappers: dict, inventory: dict[str, Any], policy: dict | None = None) -> list[str]:
     known = workflow_ids(inventory)
     allow: set[str] = {"github-policy", "pr-approval-policy", "deploy-docs"}
+
+    if policy and policy.get("dependency_pull_requests") == "notification-only":
+        allow.add("dependency-notice")
 
     if release_env_value(release_env, "BIJUX_RELEASE_ENABLED"):
         allow.add("release-github")
@@ -253,12 +259,40 @@ def parse_text(path: Path) -> str | None:
     return path.read_text(encoding="utf-8").strip()
 
 
+
+def node_workspace_profiles() -> dict[str, dict]:
+    source = json.loads((STD_REPO / '.github/standards/node-workspaces.json').read_text())
+    if (set(source) != {'version','repositories'} or type(source.get('version')) is not int
+            or source['version'] != 1 or not isinstance(source.get('repositories'), list)):
+        raise ValueError('Invalid canonical Node workspace registry')
+    profiles = {}
+    for entry in source['repositories']:
+        if not isinstance(entry, dict) or entry.get('name') not in MANAGED_REPOSITORIES or entry['name'] in profiles:
+            raise ValueError('Node workspace must identify one distinct governed repository')
+        profiles[entry['name']] = copy.deepcopy(entry)
+    WORKFLOW_EXECUTION.validate_manifest({'workflow_inventory':load_workflow_inventory(),
+                                         'repositories':list(profiles.values())}, list(profiles))
+    return profiles
+
+
+def register_node_workspaces() -> None:
+    """Regenerate reviewed Node declarations without recapturing unrelated checkouts."""
+    path = STD_REPO / '.github/standards/repo-config.manifest.json'
+    manifest = json.loads(path.read_text())
+    profiles = node_workspace_profiles()
+    entries = [entry for entry in manifest['repositories'] if entry['name'] not in profiles]
+    manifest['repositories'] = entries + list(profiles.values())
+    manifest['workflow_inventory'] = load_workflow_inventory()
+    WORKFLOW_EXECUTION.validate_manifest(manifest, MANAGED_REPOSITORIES)
+    path.write_text(json.dumps(manifest, indent=2)+'\n')
+
 def main() -> None:
     inventory = load_workflow_inventory()
     existing_path = STD_REPO / ".github/standards/repo-config.manifest.json"
     existing = json.loads(existing_path.read_text(encoding="utf-8")) if existing_path.exists() else {"repositories": []}
     # Reviewed policy is canonical configuration; consumer workflow bytes never select it.
-    existing_names = [entry["name"] for entry in existing["repositories"]]
+    existing_entries = {entry["name"]: entry for entry in existing["repositories"]}
+    existing_names = list(existing_entries)
     retained = WORKFLOW_EXECUTION.validate_manifest(existing, existing_names)
     for name, policy in retained.items():
         if policy is not None and name not in MANAGED_REPOSITORIES:
@@ -266,11 +300,18 @@ def main() -> None:
     WORKFLOW_EXECUTION.validate_inventory(inventory)
     manifest: dict = {"version": 2, "workflow_inventory": inventory, "repositories": []}
 
+    profiles = node_workspace_profiles()
     for repo_name in MANAGED_REPOSITORIES:
+        if repo_name in profiles:
+            manifest['repositories'].append(profiles[repo_name])
+            continue
         repo_path = resolve_repository_checkout(repo_name)
         repo_entry: dict = {"name": repo_name}
         if retained.get(repo_name) is not None:
             repo_entry["workflow_execution_policy"] = retained[repo_name]
+        checks = existing_entries.get(repo_name, {}).get("additional_required_status_checks")
+        if checks is not None:
+            repo_entry["additional_required_status_checks"] = checks
         release_env = parse_release_env(repo_path / ".github/release.env")
         repo_entry["release_env"] = release_env
 
@@ -289,7 +330,7 @@ def main() -> None:
 
         if wrappers:
             repo_entry["workflow_wrappers"] = wrappers
-        repo_entry["workflow_allowlist"] = derive_workflow_allowlist(repo_name, release_env, wrappers, inventory)
+        repo_entry["workflow_allowlist"] = derive_workflow_allowlist(repo_name, release_env, wrappers, inventory, retained.get(repo_name))
 
         pinned_sha = parse_text(repo_path / ".github/standards/bijux-std.sha")
         if pinned_sha:
@@ -303,4 +344,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser=argparse.ArgumentParser(description="Capture canonical repository configuration")
+    parser.add_argument("--node-workspaces-only",action="store_true")
+    args=parser.parse_args()
+    register_node_workspaces() if args.node_workspaces_only else main()

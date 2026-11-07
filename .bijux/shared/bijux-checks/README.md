@@ -23,6 +23,7 @@ Available capabilities are declared in `bijux-std-checks.yml`:
 - `docs`: shared documentation shell and assets.
 - `python`: Python Make modules.
 - `rust`: Rust Make modules.
+- `node`: private-root npm workspace Make contracts.
 
 When capabilities are explicitly selected, the updater removes unselected
 managed directories and writes a manifest containing only selected directories.
@@ -33,7 +34,7 @@ An additive refresh can preserve installed, independently accepted components wh
 advancing common governance. Set `BIJUX_STD_UPDATE_PRESERVE_UNSELECTED=1` together
 with an explicit capability selection, and run the updater from the exact accepted
 source checkout. For example, select `BIJUX_STD_CAPABILITIES=common` to retain the
-documentation, Python and Rust components. This mode preserves their manifest rows
+documentation, Python, Rust and Node components. This mode preserves their manifest rows
 and refuses modified, untracked, aliased or unaccepted inputs. Unselected runtime
 components must also match the new source; otherwise select their capability.
 The default replacement behaviour above remains unchanged.

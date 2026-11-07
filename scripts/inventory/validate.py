@@ -13,7 +13,7 @@ from scripts.inventory.repositories import (
 )
 
 
-ALLOWED_CLASSES = {"foundation", "hubs", "python", "rust"}
+ALLOWED_CLASSES = {"foundation", "hubs", "python", "rust", "node"}
 ALLOWED_DELIVERY_STATES = {"not-applicable", "planned", "published"}
 ALLOWED_VISIBILITIES = {"public"}
 REPOSITORY_SETTING_TYPES = {
@@ -100,8 +100,8 @@ def validate_inventory(inventory: object) -> None:
     if not isinstance(inventory, dict):
         fail("inventory must be an object")
     require_keys("inventory", inventory, {"version", "classes", "repository_settings_defaults", "workflow_execution_defaults", "repositories"})
-    if type(inventory.get("version")) is not int or inventory["version"] != 4:
-        fail("inventory version must be 4")
+    if type(inventory.get("version")) is not int or inventory["version"] != 5:
+        fail("inventory version must be 5")
 
     classes = inventory.get("classes")
     if not isinstance(classes, dict):

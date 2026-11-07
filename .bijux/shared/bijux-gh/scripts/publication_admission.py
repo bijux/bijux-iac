@@ -10,7 +10,7 @@ import subprocess
 from urllib.request import Request, urlopen
 from urllib.parse import urlparse
 
-PUBLISHERS = {"deploy-docs", "release-github", "release-ghcr", "release-crates", "release-pypi"}
+PUBLISHERS = {"deploy-docs", "release-github", "release-ghcr", "release-crates", "release-pypi", "release-npm"}
 PR_ONLY_CHECKS = {"policy / pr approval"}
 SHA = re.compile(r"[0-9a-f]{40}")
 # Exact merge identity uses the supported API contract that exposes merge_commit_sha.

@@ -7,7 +7,7 @@ from scripts.inventory.workflows import validate_workflow_execution, merged_work
 
 
 class WorkflowExecutionTests(unittest.TestCase):
-    def test_all_twelve_use_review_only_proposals_with_the_explicit_masterclass_exception(self):
+    def test_complete_family_use_review_only_proposals_with_the_explicit_masterclass_exception(self):
         inventory = load_inventory()
         validate_workflow_execution(inventory, require_standard=False)
         for repository in inventory['repositories']:
