@@ -17,11 +17,15 @@ on:
         description: Applicable publisher
         type: choice
         required: true
-        options: [deploy-docs, release-github, release-ghcr, release-crates, release-pypi]
+        options: [deploy-docs, release-github, release-ghcr, release-crates, release-pypi, release-npm]
       commit:
         description: Immutable accepted target main commit
         type: string
         required: true
+      candidate_run_id:
+        description: Successful manual package-candidate run at the accepted npm source
+        type: string
+        required: false
       release_tag:
         description: Existing version tag resolving to that commit for releases
         type: string
@@ -39,6 +43,7 @@ env:
   PUBLICATION_TARGET_REPOSITORY: ${{ inputs.repository }}
   PUBLICATION_TARGET_WORKFLOW: ${{ inputs.workflow }}
   PUBLICATION_TARGET_COMMIT: ${{ inputs.commit }}
+  PUBLICATION_TARGET_CANDIDATE_RUN: ${{ inputs.candidate_run_id }}
   PUBLICATION_TARGET_TAG: ${{ inputs.release_tag }}
   PYTHONPYCACHEPREFIX: ${{ github.workspace }}/artifacts/python/pycache
 

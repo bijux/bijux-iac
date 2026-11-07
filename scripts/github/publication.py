@@ -65,9 +65,11 @@ def audit(inventory: dict, actor_id: str) -> dict:
             observation["mismatches"].append(f"workflow audit unavailable: {error}")
         if declarations[name]:
             try:
-                destination = documentation_destination(inventory, name)
-                observation["documentation_destination"] = destination
-                trust_repository = destination['repository']
+                trust_repository = name
+                if "deploy-docs" in declarations[name]:
+                    destination = documentation_destination(inventory, name)
+                    observation["documentation_destination"] = destination
+                    trust_repository = destination['repository']
                 variable = gh_api_json(f"repos/bijux/{trust_repository}/actions/variables/BIJUX_PUBLICATION_ACTOR_ID")
                 if variable.get("value") != actor_id:
                     observation["mismatches"].append("publisher trust does not identify the configured App bot")
@@ -88,7 +90,7 @@ def main() -> None:
     path.write_text(json.dumps(receipt, indent=2) + "\n")
     if receipt["mismatches"]:
         raise SystemExit("\n".join(receipt["mismatches"]))
-    print("manual publication policy: OK (12 repositories)")
+    print("manual publication policy: OK")
 
 
 if __name__ == "__main__":
