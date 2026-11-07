@@ -1,12 +1,14 @@
 # Workflow execution and dependency review
 
-The inventory defines a shared execution policy for all twelve repositories.
+The inventory defines a shared execution policy for the governed family.
 `workflow_execution_defaults` requires dependency notifications, verification on
 human pull requests, and dependency changes consolidated by repository owners.
 Each repository exposes the same `governance.workflow_execution` override object.
 Masterclass retains `main_verification: existing-events` because its existing
 human verification and documentation deployment are managed separately.
-All twelve repositories expose the same manual `deploy-docs` entrypoint.
+Documentation-capable repositories expose the manual `deploy-docs` entrypoint.
+The RO-Crate Node workspace instead declares a disabled manual `release-npm`
+capability and no documentation publisher.
 Documentation ownership is declared separately: Std and IaC currently use Hub
 sections and can later adopt owned sites without a different workflow. Genomics
 has an owned destination whose first publication requires Pages readiness.

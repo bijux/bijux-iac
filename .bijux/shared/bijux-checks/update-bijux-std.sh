@@ -3,6 +3,9 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+source "${script_dir}/scripts/standard-source-layout.sh"
+in_bijux_std_repo=0
+if is_standard_source_checkout "${repo_root}"; then in_bijux_std_repo=1; fi
 bijux_std_artifact_root="${repo_root}/artifacts/bijux-std"
 mkdir -p "${bijux_std_artifact_root}"
 default_config_path="${repo_root}/.bijux/shared/bijux-checks/bijux-std-checks.yml"
@@ -37,7 +40,7 @@ read_selected_directories() {
 
 resolve_local_rel() {
   local rel="$1"
-  if [[ "${rel}" == shared/* && -d "${repo_root}/.bijux/shared" && "$(basename "${repo_root}")" != "bijux-std" ]]; then
+  if [[ "${rel}" == shared/* && -d "${repo_root}/.bijux/shared" && "${in_bijux_std_repo}" != "1" ]]; then
     printf '.bijux/%s\n' "${rel}"
     return
   fi
@@ -145,11 +148,6 @@ fi
 declare -a missing_dirs=()
 declare -a update_dirs=()
 declare -a skipped_dirs=()
-
-in_bijux_std_repo=0
-if [[ "$(basename "${repo_root}")" == "bijux-std" ]]; then
-  in_bijux_std_repo=1
-fi
 
 should_use_self_repo_mode=0
 if [[ "${self_repo_mode}" == "on" ]]; then
@@ -463,7 +461,7 @@ else
   rewrite_manifest_for_directories "${manifest_path}" "${selected_directories}"
 fi
 
-if [[ -d "${repo_root}/.bijux/shared" && "$(basename "${repo_root}")" != "bijux-std" ]]; then
+if [[ -d "${repo_root}/.bijux/shared" && "${in_bijux_std_repo}" != "1" ]]; then
   if [[ -d "${repo_root}/shared" ]]; then
     if [[ -z "$(find "${repo_root}/shared" -mindepth 1 -print -quit 2>/dev/null)" ]]; then
       rmdir "${repo_root}/shared"

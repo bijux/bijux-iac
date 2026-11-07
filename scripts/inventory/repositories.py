@@ -21,6 +21,7 @@ FAMILY_REPOSITORIES = {
     "bijux-pollenomics": ("python", "python", "published", "published"),
     "bijux-proteomics": ("python", "python", "published", "published"),
     "bijux-phylogenetics": ("python", "python", "published", "published"),
+    "bijux-ro-crate-node": ("node", "node", "not-applicable", "planned"),
 }
 
 BASELINE_REQUIRED_STATUS_CHECKS = {
@@ -46,7 +47,7 @@ def load_inventory(path: Path = INVENTORY_PATH) -> dict[str, Any]:
 
 def canonical_inventory(inventory: dict[str, Any]) -> str:
     repositories = {repo["name"]: repo for repo in inventory["repositories"]}
-    class_order = ("foundation", "hubs", "rust", "python")
+    class_order = ("foundation", "hubs", "rust", "python", "node")
     repository_keys = ("name", "class", "stack", "delivery", "settings", "governance")
     normalized = {
         "version": inventory["version"],

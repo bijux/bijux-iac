@@ -85,7 +85,7 @@ class AcceptedProducerTests(unittest.TestCase):
         self.inventory = load_inventory()
         with patch.object(checks, "gh_api_json", side_effect=subprocess.CalledProcessError(1, ["gh", "api"])):
             receipt = checks.producer_evidence(self.inventory)
-        self.assertEqual(len(receipt["repositories"]), 12)
-        self.assertEqual(len(receipt["errors"]), 12)
+        self.assertEqual(len(receipt["repositories"]), 13)
+        self.assertEqual(len(receipt["errors"]), 13)
         self.assertEqual(receipt["status"], "producers-unverified")
         self.assertIs(receipt["remote_writes"], False)

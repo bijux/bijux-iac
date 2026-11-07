@@ -1,6 +1,6 @@
 # GitHub repository rulesets
 
-This module owns the `main-branch-protection` ruleset for each of the twelve
+This module owns the `main-branch-protection` ruleset for each of the governed
 repositories declared in the root inventory. It uses
 `github_repository_ruleset.main[repository]` resource addresses and the committed
 GitHub provider lock. The owner is restricted to `bijux`.

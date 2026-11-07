@@ -17,10 +17,10 @@ class InventoryContractTests(unittest.TestCase):
 
     def test_inventory_covers_the_complete_bijux_family(self) -> None:
         self.assertEqual(set(self.repositories), set(FAMILY_REPOSITORIES))
-        self.assertEqual(len(self.repositories), 12)
+        self.assertEqual(len(self.repositories), 13)
         self.assertEqual(
             Counter(repository["class"] for repository in self.repositories.values()),
-            {"foundation": 2, "hubs": 2, "rust": 4, "python": 4},
+            {"foundation": 2, "hubs": 2, "rust": 4, "python": 4, "node": 1},
         )
 
     def test_inventory_checks_match_accepted_standards_for_every_repository(self) -> None:
@@ -87,13 +87,13 @@ class InventoryContractTests(unittest.TestCase):
                     validate_inventory(inventory)
 
 
-    def test_genomics_is_the_only_planned_product_delivery(self) -> None:
+    def test_unreleased_products_retain_planned_delivery(self) -> None:
         planned = {
             name
             for name, repository in self.repositories.items()
             if "planned" in repository["delivery"].values()
         }
-        self.assertEqual(planned, {"bijux-genomics"})
+        self.assertEqual(planned, {"bijux-genomics", "bijux-ro-crate-node"})
 
     def test_merged_branches_are_deleted_for_every_repository(self) -> None:
         for name, repository in self.repositories.items():

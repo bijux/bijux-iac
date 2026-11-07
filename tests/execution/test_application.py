@@ -51,7 +51,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 patch.object(application, "apply_settings") as settings_write, \
                 patch.object(application, "terraform") as terraform:
             receipt = application.verify_credential()
-        self.assertEqual(len(receipt["credential_access"]), 12)
+        self.assertEqual(len(receipt["credential_access"]), 13)
         self.assertEqual(receipt["status"], "credential-verified")
         self.assertIs(receipt["remote_writes"], False)
         settings_write.assert_not_called()
@@ -71,7 +71,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 patch.object(application, "write_receipt"):
             with self.assertRaisesRegex(ValueError, "administration visibility"):
                 application.verify_credential()
-        self.assertEqual(api.call_count, 12)
+        self.assertEqual(api.call_count, 13)
 
     def test_workflow_defaults_to_preflight_and_requires_explicit_application(self):
         workflow = (ROOT / ".github/workflows/github-governance-apply.yml").read_text()
