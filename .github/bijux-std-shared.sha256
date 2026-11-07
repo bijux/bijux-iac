@@ -1,4 +1,4 @@
-7309f1ce0e349c6de763d96cebeb456dc8157cc2e7a3255a00f60f861b8bae40  .bijux/shared/bijux-gh/scripts/publication_admission.py
+a7d074d88b8f428d3316bbd5194c4107c8b4f45220ace5d841bab74be95831e2  .bijux/shared/bijux-gh/scripts/publication_admission.py
 0a70c2b53298218538de363fb6c2bfd05358a4a35aad0ed29eeaed8cc5eaf2c7  .bijux/shared/bijux-gh/workflows/codecov.yml
 ebfc36060434fe4d7851212f4f33ede61e8587205605a3c00477781174a22ee9  .bijux/shared/bijux-gh/workflows/dependency-notice.yml
 de7adc5b78d6cceae3d5939d6ae62c0d6e21042b3d0554fb9b2cf346e9b0ba4a  .bijux/shared/bijux-gh/workflows/deploy-docs.yml
@@ -45,7 +45,7 @@ a45960789d4a6a6faea92bd811ad407eb8e9d4bef391e8fde01ae423915386db  .github/script
 ea9bbe1b48edd6b4658ae57d2e8b2ce4bb7aff4cb8dec949bb79a82b3a75d08c  .github/standards/workflow-inventory.json
 6a406ea3f222d2c36243bea74b7fdf1416052213a20312f13cd5d5caee113e12  .github/standards/workflow-sources/automerge-pr.yml
 daac9d0b3efe51c39fc884bb82e7d77015eab9c766c3bef0597bc63194b9cb7c  .github/standards/workflow-sources/bijux-std.yml
-23fa5cb6b43c97fee12e53aa7d7a049c3e979a6e07fe7cfa2832415fe0a3c51b  .github/standards/workflow-sources/source-manifest.json
+48a2524f3ebbf4e557bd9472f6a1924c049136bd37a2b81e7de744ac8e9a9328  .github/standards/workflow-sources/source-manifest.json
 6a406ea3f222d2c36243bea74b7fdf1416052213a20312f13cd5d5caee113e12  .github/workflows/automerge-pr.yml
 ab171916dc4600e5e82b03581c99c9900e1ebd5fcedae56865353ed5c45f29e8  .github/workflows/bijux-std.yml
 4bcc5826fe5997b1e6eab598b4a637c18035b4b12ed68ae6e21eac6f327b6cf7  .github/workflows/dependency-notice.yml
