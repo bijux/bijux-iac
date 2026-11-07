@@ -83,6 +83,8 @@ def validate_publisher(policy, workflow: str, document: dict) -> None:
         raise ValueError("publisher must require an immutable accepted commit")
     if workflow != "deploy-docs" and (not isinstance(inputs.get("release_tag"), dict) or inputs["release_tag"].get("required") is not True):
         raise ValueError("publisher must require its release tag")
+    if workflow == "release-npm" and (not isinstance(inputs.get("candidate_run_id"), dict) or inputs["candidate_run_id"].get("required") is not True or inputs["candidate_run_id"].get("type") != "string"):
+        raise ValueError("npm publisher must require its exact candidate workflow run")
     jobs = document.get("jobs")
     if not isinstance(jobs, dict) or not all(isinstance(job, dict) for job in jobs.values()):
         raise ValueError("publisher jobs must be objects")

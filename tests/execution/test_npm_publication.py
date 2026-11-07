@@ -62,3 +62,18 @@ class NpmPublicationTests(unittest.TestCase):
         self.assertEqual(receipt['status'],'drift')
         self.assertIs(receipt['remote_writes'],False)
         self.assertTrue(receipt['mismatches'])
+
+
+    def test_publisher_audit_refuses_missing_optional_or_mistyped_candidate_inputs(self):
+        policy=inventory.workflow_policy()
+        admission=policy.publication.controller_admission_job('release-npm')
+        document={'on':{'workflow_dispatch':{'inputs':{'accepted_commit':{'required':True},
+                  'release_tag':{'required':True},'candidate_run_id':{'required':True,'type':'string'}}}},
+                  'jobs':{'publication_admission':admission}}
+        inventory.validate_publisher(policy,'release-npm',document)
+        for candidate in [None,{'required':False,'type':'string'},{'required':True,'type':'number'}]:
+            bad=copy.deepcopy(document)
+            if candidate is None: del bad['on']['workflow_dispatch']['inputs']['candidate_run_id']
+            else: bad['on']['workflow_dispatch']['inputs']['candidate_run_id']=candidate
+            with self.subTest(candidate=candidate),self.assertRaisesRegex(ValueError,'candidate'):
+                inventory.validate_publisher(policy,'release-npm',bad)
