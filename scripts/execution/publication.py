@@ -20,7 +20,7 @@ APP_PERMISSIONS = {"actions": "write", "contents": "read", "checks": "read", "ac
 
 def admit_controller(repository: str, workflow: str, commit: str, tag: str, *, credential_only: bool = False) -> str:
     require_accepted_main()
-    validate_request(validated_inventory(), repository, workflow, commit, tag, require_published=not credential_only)
+    validate_request(validated_inventory(), repository, workflow, commit, tag, require_published=not credential_only, candidate_run=os.environ.get("PUBLICATION_TARGET_CANDIDATE_RUN", ""))
     actor = os.environ.get("PUBLICATION_CONTROLLER_ACTOR", "")
     if actor != "bijux-publication[bot]":
         raise ValueError("publication requires the dedicated bijux-publication App bot")
@@ -65,6 +65,26 @@ def admit_repository(repository: str, workflow: str, commit: str, tag: str, acto
     return admission["admit"](environment, public_source=True) if public_source else admission["admit"](environment)
 
 
+
+def npm_candidate(repository: str, commit: str) -> dict:
+    value=os.environ.get('PUBLICATION_TARGET_CANDIDATE_RUN','')
+    if not value.isdecimal() or int(value)<=0:
+        raise ValueError('npm publication requires an explicit numeric candidate run')
+    prefix=f'repos/bijux/{repository}/actions/'
+    workflow=gh_api_json(prefix+'workflows/package-candidate.yml')
+    candidate=gh_api_json(prefix+'runs/'+value)
+    full_name='bijux/'+repository
+    if not (type(workflow.get('id')) is int and workflow['id']>0 and
+            workflow.get('path')=='.github/workflows/package-candidate.yml' and
+            type(candidate.get('id')) is int and candidate['id']==int(value) and candidate.get('repository',{}).get('full_name')==full_name and
+            candidate.get('head_repository',{}).get('full_name')==full_name and
+            candidate.get('workflow_id')==workflow.get('id') and
+            candidate.get('head_sha')==commit and candidate.get('head_branch')=='main' and
+            candidate.get('event')=='workflow_dispatch' and candidate.get('status')=='completed' and
+            candidate.get('conclusion')=='success'):
+        raise ValueError('npm candidate must be a successful exact-source manual package workflow')
+    return {'run_id':int(value),'commit':commit,'workflow_id':workflow['id']}
+
 def request(repository: str, workflow: str, commit: str, tag: str) -> dict:
     actor = admit_controller(repository, workflow, commit, tag)
     destination = resolve_destination(repository, workflow, commit)
@@ -81,6 +101,8 @@ def request(repository: str, workflow: str, commit: str, tag: str) -> dict:
                   if name != target else gh_api_json)
         if reader(f"repos/bijux/{name}/commits/main").get("sha") != revision:
             raise ValueError("publication source or destination main changed during admission")
+    if workflow == "release-npm":
+        receipt["npm_candidate"] = npm_candidate(repository, commit)
     receipt["destination"] = destination
     receipt["requested_repository"] = repository
     receipt["requested_commit"] = commit
@@ -146,6 +168,8 @@ def dispatch(repository: str, workflow: str, commit: str, tag: str) -> dict:
     inputs = {"accepted_commit": destination["commit"]}
     if workflow != "deploy-docs":
         inputs["release_tag"] = tag
+    if workflow == "release-npm":
+        inputs["candidate_run_id"] = str(receipt["npm_candidate"]["run_id"])
     try:
         receipt["remote_write_attempted"] = True
         subprocess.run(["gh", "api", "--method", "POST", f"repos/bijux/{destination['repository']}/actions/workflows/{workflow}.yml/dispatches", "--input", "-"],
@@ -170,7 +194,7 @@ def main() -> None:
         if os.environ.get("PUBLICATION_OPERATION") not in {"verify-credential", "preflight", "dispatch"}:
             raise ValueError("publication operation must be explicit")
         require_accepted_main()
-        validate_request(validated_inventory(), *values, require_published=os.environ["PUBLICATION_OPERATION"] != "verify-credential")
+        validate_request(validated_inventory(), *values, require_published=os.environ["PUBLICATION_OPERATION"] != "verify-credential", candidate_run=os.environ.get("PUBLICATION_TARGET_CANDIDATE_RUN", ""))
         destination = resolve_destination(values[0], values[1], values[2])
         if os.environ.get("GITHUB_OUTPUT"):
             with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:

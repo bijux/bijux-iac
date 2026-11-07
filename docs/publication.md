@@ -8,7 +8,7 @@ review notices. The accepted-PR execution policy avoids repeating those checks
 after merge. Masterclass retains its existing human workflow events.
 
 The accepted `bijux-std` manifest owns which canonical publishers each repository
-supports. All twelve repositories expose the same manual `deploy-docs` workflow,
+supports. Repositories with a documentation capability expose the same manual `deploy-docs` workflow,
 immutable input and App admission. The manifest explicitly identifies each
 documentation destination; missing policy is an inventory error. Std currently
 routes to Hub's `/standards/` section and IaC to `/infrastructure/`. Each may
@@ -20,7 +20,9 @@ dispatch, verify that its destination has Pages configured with the workflow bui
 type. The publisher's `configure-pages` step checks Pages using its own scoped
 `pages: write` permission; the dispatch App has no Pages permission. This allows
 a planned site's first publication without falsely reporting published delivery.
-Package releases still require published delivery state. A request selects a full
+Existing package publishers require published delivery state. npm first-release
+admission instead requires explicit accepted enablement and an exact candidate
+run; it does not change a planned package into a published one. A request selects a full
 40-character current source `main` commit. Releases also require an existing
 version tag resolving to exactly that commit. Documentation requests use no tag.
 
@@ -82,7 +84,7 @@ credentials, after admission succeeds.
 ## Verify before a request
 
 Use a read credential with Contents and Variables access and the Ruby structural
-workflow parser available to audit all twelve repositories:
+workflow parser available to audit all governed repositories:
 
 ```bash
 python3 -B -m scripts.github.publication --actor-id BOT_USER_ID
@@ -122,8 +124,8 @@ operation sends a publication request. All operations use accepted main and
 the selected-repository token boundary. Credential verification covers the
 selected installation; it does not establish access to other repositories.
 Credential verification can inspect an applicable planned publisher's
-installation. It does not establish source or Pages readiness. Package preflight
-and dispatch still require published delivery state.
+installation. It does not establish source or Pages readiness. Package preflight and dispatch require their applicable accepted enablement;
+credential verification does not grant publication permission.
 
 The unprivileged admission job rejects a feature ref or invalid capability before
 entering the credential environment. The controller then verifies the App's
@@ -147,3 +149,22 @@ foundation repository's source tree. `artifacts/publication/request.json` record
 commit, target, tag, required checks, identity, and dispatch outcome. A successful
 dispatch receipt proves request acceptance, not successful publication; inspect
 the consumer workflow's final result separately.
+
+
+## npm candidate admission
+
+A `release-npm` request requires `candidate_run_id` in addition to accepted main
+and an existing release tag. The candidate must be a successful manual
+`package-candidate.yml` run in the same repository at that exact main commit.
+A fork, PR run, other workflow, failed result or mismatched revision refuses
+preflight. The admitted run identity is retained and forwarded to the consumer.
+
+The canonical standards declaration must explicitly enable npm publication.
+The RO-Crate declaration starts disabled. Its package delivery remains `planned`
+until actual publication is observed; readiness never fabricates prior success.
+The consumer repeats admission and checks the inspected archive cohort before
+its own protected OIDC publisher can write to npm. No controller token receives
+registry credentials, and the App's existing exact permissions remain unchanged.
+An npm-only repository uses its own publication trust variable and does not
+acquire a documentation route. `verify-credential` remains read-only; preflight
+and dispatch retain their distinct authorization boundaries.

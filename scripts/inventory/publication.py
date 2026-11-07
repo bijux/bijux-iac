@@ -7,7 +7,7 @@ import runpy
 
 from scripts.inventory.repositories import ROOT, FAMILY_REPOSITORIES
 
-WORKFLOWS = {"deploy-docs", "release-github", "release-ghcr", "release-crates", "release-pypi"}
+WORKFLOWS = {"deploy-docs", "release-github", "release-ghcr", "release-crates", "release-pypi", "release-npm"}
 
 
 def workflow_policy():
@@ -40,13 +40,18 @@ def publisher_declarations(inventory: dict) -> dict:
     return declarations
 
 
-def validate_request(inventory: dict, repository: str, workflow: str, commit: str, tag: str, *, require_published: bool = True) -> None:
+def validate_request(inventory: dict, repository: str, workflow: str, commit: str, tag: str, *, require_published: bool = True, candidate_run: str = "") -> None:
     declarations = publisher_declarations(inventory)
     if repository not in declarations or workflow not in declarations[repository] or not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("publication requires an applicable family publisher and immutable commit")
     selected = next(entry for entry in inventory["repositories"] if entry["name"] == repository)
     surface = "documentation" if workflow == "deploy-docs" else "packages"
-    if require_published and workflow != "deploy-docs" and selected["delivery"][surface] != "published":
+    if require_published and workflow == "release-npm":
+        if not candidate_run.isdecimal() or int(candidate_run) <= 0:
+            raise ValueError("npm publication requires an explicit candidate workflow run")
+        if not npm_enabled(repository):
+            raise ValueError("npm publication is disabled in accepted standards")
+    elif require_published and workflow != "deploy-docs" and selected["delivery"][surface] != "published":
         raise ValueError("publication capability is not active for this repository")
     if workflow == "deploy-docs":
         if tag:
@@ -54,6 +59,13 @@ def validate_request(inventory: dict, repository: str, workflow: str, commit: st
     elif not re.fullmatch(r"v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", tag):
         raise ValueError("release publication requires an explicit version tag")
 
+
+
+def npm_enabled(repository: str) -> bool:
+    manifest=json.loads((ROOT/'.github/standards/repo-config.manifest.json').read_text())
+    entry=next(row for row in manifest['repositories'] if row['name']==repository)
+    return any(value.get('key')=='BIJUX_NPM_ENABLED' and value.get('type')=='bool' and value.get('value') is True
+               for value in entry.get('release_env',[]))
 
 def documentation_destination(inventory: dict, repository: str) -> dict:
     """Resolve only the immutable accepted family documentation routes."""
