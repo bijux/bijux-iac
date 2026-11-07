@@ -201,6 +201,16 @@ def admit(environment: dict[str, str], *, public_source: bool = False) -> dict:
     contexts = {check["context"] for check in required}
     if not {"policy / github", "std / standard", "std / report"}.issubset(contexts):
         raise ValueError("publication requires the common protection checks")
+    # Effective rules are live state and may drift below the accepted policy.
+    # Product checks must remain bound even when every remaining check is green.
+    additional = entry.get("additional_required_status_checks", [])
+    if (not isinstance(additional, list) or any(
+            not isinstance(check, dict) or not isinstance(check.get("context"), str)
+            or not check["context"].strip() for check in additional)):
+        raise ValueError("malformed canonical product check declarations")
+    canonical = {check["context"] for check in additional}
+    if not canonical.issubset(contexts):
+        raise ValueError(f"publication is missing canonical product check bindings: {sorted(canonical - contexts)}")
     policy = entry.get("workflow_execution_policy", {})
     number, verification_commit = None, commit
     if policy.get("main_verification") == "accepted-pull-request":

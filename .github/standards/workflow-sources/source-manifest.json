@@ -40,7 +40,7 @@
     "shared/bijux-gh/required-status-checks.md": "de462a41e1b8ecf4ac5b6908a18b74cd33a55d6fa4b6daf64080dfc9e062a6b1",
     "shared/bijux-gh/rulesets/main-branch-protection.json": "a194664f7530191d4f0fb239ee5e58cf5fd9648a7ab013030e6d84c5f4bc9585",
     "shared/bijux-gh/scripts/npm_release.py": "fc9b6efca54a807a709ad5367531e99c795d859da2c47e244138d2053542bb68",
-    "shared/bijux-gh/scripts/publication_admission.py": "7309f1ce0e349c6de763d96cebeb456dc8157cc2e7a3255a00f60f861b8bae40",
+    "shared/bijux-gh/scripts/publication_admission.py": "a7d074d88b8f428d3316bbd5194c4107c8b4f45220ace5d841bab74be95831e2",
     "shared/bijux-gh/workflows/codecov.yml": "0a70c2b53298218538de363fb6c2bfd05358a4a35aad0ed29eeaed8cc5eaf2c7",
     "shared/bijux-gh/workflows/dependency-notice.yml": "ebfc36060434fe4d7851212f4f33ede61e8587205605a3c00477781174a22ee9",
     "shared/bijux-gh/workflows/deploy-docs.yml": "de7adc5b78d6cceae3d5939d6ae62c0d6e21042b3d0554fb9b2cf346e9b0ba4a",
