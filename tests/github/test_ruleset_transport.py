@@ -7,11 +7,11 @@ import unittest
 from unittest.mock import patch
 
 from scripts.github import ruleset_transport as transport
-from tests.github.test_audit import RulesetAuditTests
+from tests.github.ruleset_fixtures import healthy_ruleset
 
 
 def before_image(name="bijux-iac"):
-    return {**RulesetAuditTests.healthy_ruleset(), "id": 123, "source": f"bijux/{name}",
+    return {**healthy_ruleset(), "id": 123, "source": f"bijux/{name}",
             "source_type": "Repository", "updated_at": "original", "node_id": "retained-node",
             "_links": {"self": {"href": "retained-link"}}}
 
