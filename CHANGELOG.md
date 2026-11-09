@@ -1,7 +1,14 @@
 # Changelog
 
-Repository changes are recorded by merged pull request, newest first.
+Repository changes are recorded by pull request, newest first.
 Live governance applications and publications have separate execution receipts.
+
+### [#39](https://github.com/bijux/bijux-iac/pull/39) — Governance history by pull request (pending review)
+
+- Record the complete merged PR history with linked level-three headings and
+  expanded accounts of substantial governance and publication changes.
+- Remove release grouping, correct stale status and fill omissions found while
+  checking the PR descriptions, commits and accepted diffs.
 
 ### [#38](https://github.com/bijux/bijux-iac/pull/38) — Required product checks before publication
 
