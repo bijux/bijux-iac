@@ -29,6 +29,9 @@ Configure that environment as protected in GitLab before any credential is
 placed there. The current job writes an explicit blocked receipt and fails;
 it performs no live API reads, plan, infrastructure apply or publication.
 A green set of automatic validation jobs is not a completed live plan.
+Other pipeline contexts execute `governance-plan-unavailable`, which fails with
+the same blocked receipt and has no credential environment. This prevents a
+feature/MR pipeline from becoming merge-ready by omitting the manual main gate.
 
 The existing governance application path admits GitHub manual dispatch on the
 current accepted `bijux/bijux-iac` main commit. GitLab must obtain its own reviewed

@@ -50,6 +50,13 @@ class GitLabValidationTests(unittest.TestCase):
         self.assertIn('blocked-plan', '\n'.join(job['script']))
         self.assertNotIn('scripts.execution.application', '\n'.join(job['script']))
         self.assertNotIn('GITHUB_', (ROOT / '.gitlab-ci.yml').read_text())
+        blocked = pipeline['governance-plan-unavailable']
+        self.assertEqual(blocked['rules'][0]['when'], 'never')
+        self.assertEqual(blocked['rules'][0]['if'], job['rules'][0]['if'])
+        self.assertEqual(blocked['rules'][-1], {'when': 'on_success'})
+        self.assertIn('blocked-plan', '\n'.join(blocked['script']))
+        self.assertNotIn('environment', blocked)
+        self.assertNotIn('allow_failure', blocked)
 
     def test_validation_context_binds_checkout_and_rejects_mirror_and_spoofed_sha(self):
         from scripts.execution import gitlab_validation
