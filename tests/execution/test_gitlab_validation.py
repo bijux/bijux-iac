@@ -28,6 +28,10 @@ class GitLabValidationTests(unittest.TestCase):
                 self.assertIn(command, pipeline[job]['script'])
                 self.assertNotIn('allow_failure', pipeline[job])
         self.assertIn('scripts.execution.gitlab_validation', '\n'.join(pipeline['default']['before_script']))
+        self.assertNotIn('TMPDIR', pipeline['variables'])
+        bootstrap = pipeline['default']['before_script']
+        self.assertLess(bootstrap.index('mkdir -p artifacts/runtime artifacts/gitlab'),
+                        bootstrap.index('export TMPDIR=\"$CI_PROJECT_DIR/artifacts/runtime\"'))
 
     def test_pipeline_guards_canonical_project_and_avoids_duplicate_mr_pushes(self):
         rules = self.pipeline()['workflow']['rules']

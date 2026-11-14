@@ -17,7 +17,6 @@ variables:
   GIT_DEPTH: "0"
   PYTHONDONTWRITEBYTECODE: "1"
   PYTHONPYCACHEPREFIX: "$CI_PROJECT_DIR/artifacts/python/pycache"
-  TMPDIR: "$CI_PROJECT_DIR/artifacts/runtime"
   TF_IN_AUTOMATION: "true"
 
 default:
@@ -25,6 +24,7 @@ default:
   timeout: 20 minutes
   before_script:
     - mkdir -p artifacts/runtime artifacts/gitlab
+    - export TMPDIR="$CI_PROJECT_DIR/artifacts/runtime"
     - apt-get update && apt-get install --yes --no-install-recommends bash ca-certificates curl git make ruby unzip
     - python3 -B -m scripts.execution.gitlab_validation context
   artifacts:
