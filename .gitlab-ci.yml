@@ -1,0 +1,71 @@
+# GitLab validates the source under review. Live governance remains a separate gate.
+workflow:
+  rules:
+    - if: '$CI_SERVER_URL != "https://gitlab.com" || $CI_PROJECT_PATH != "bijux-oss/bijux-iac" || $CI_PROJECT_ID != "88949971"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_TAG && $CI_COMMIT_REF_PROTECTED == "true"'
+    - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule") && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
+    - when: never
+
+stages: [validation, governance]
+
+variables:
+  GIT_DEPTH: "0"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONPYCACHEPREFIX: "$CI_PROJECT_DIR/artifacts/python/pycache"
+  TMPDIR: "$CI_PROJECT_DIR/artifacts/runtime"
+  TF_IN_AUTOMATION: "true"
+
+default:
+  image: python:3.13.18-slim-bookworm
+  timeout: 20 minutes
+  before_script:
+    - mkdir -p artifacts/runtime artifacts/gitlab
+    - apt-get update && apt-get install --yes --no-install-recommends bash ca-certificates curl git make ruby unzip
+    - python3 -B -m scripts.execution.gitlab_validation context
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - artifacts/gitlab/
+
+contracts:
+  stage: validation
+  script:
+    - make contract-tests
+
+terraform-format:
+  stage: validation
+  script:
+    - bash scripts/terraform/install.sh
+    - export PATH="$CI_PROJECT_DIR/artifacts/tools:$PATH"
+    - make terraform-format-check
+
+terraform-validate:
+  stage: validation
+  script:
+    - bash scripts/terraform/install.sh
+    - export PATH="$CI_PROJECT_DIR/artifacts/tools:$PATH"
+    - make terraform-validate
+
+standards:
+  stage: validation
+  script:
+    - make bijux-std-checks
+
+governance-plan:
+  stage: governance
+  environment:
+    name: governance-plan
+  resource_group: governance-plan
+  allow_failure: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "push")'
+      when: manual
+    - when: never
+  script:
+    - python3 -B -m scripts.execution.gitlab_validation blocked-plan
