@@ -41,7 +41,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
             if "/rulesets/" in path:
                 return {"bypass_actors": []}
             return [] if "/pulls?" in path else {"check_runs": []}
-        with patch.object(application, "require_accepted_main"), \
+        with patch.object(application, "require_governance_main"), \
                 patch.object(application, "settings_plan"), \
                 patch.object(application, "list_rulesets", return_value=[{"name": "main-branch-protection", "id": 1}]), \
                 patch.object(application, "gh_api_json", side_effect=api), \
@@ -62,7 +62,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
     def test_missing_administrator_visibility_reports_every_repository(self):
         from unittest.mock import patch
         from scripts.execution import application
-        with patch.object(application, "require_accepted_main"), \
+        with patch.object(application, "require_governance_main"), \
                 patch.object(application, "settings_plan"), \
                 patch.object(application, "list_rulesets", return_value=[{"name": "main-branch-protection", "id": 1}]), \
                 patch.object(application, "gh_api_json", return_value={}) as api, \
@@ -138,7 +138,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
         from scripts.execution import application
         inventory = {"repositories": [{"name": "bijux-iac"}]}
         with patch.object(application, "validated_inventory", return_value=inventory), \
-                patch.object(application, "require_accepted_main"), \
+                patch.object(application, "require_governance_main"), \
                 patch.object(application, "require_producers", return_value=[]), \
                 patch.object(application.subprocess, "check_output", return_value=json.dumps({"terraform_version": application.TERRAFORM_VERSION})), \
                 patch.object(application.subprocess, "run"), \
@@ -173,7 +173,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 patch.object(application, "WORK_DIR") as work, \
                 patch.object(application, "PLAN") as plan, \
                 patch.object(application, "terraform", side_effect=terraform) as calls, \
-                patch.object(application, "require_accepted_main") as accepted, \
+                patch.object(application, "require_governance_main") as accepted, \
                 patch.object(application, "ruleset_snapshot") as snapshots, \
                 patch.object(application, "require_representable_rulesets") as preservation, \
                 patch.object(application, "import_rulesets"), \
@@ -242,7 +242,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
         settings = {repository["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
                     for repository in load_inventory()["repositories"]}
         receipt = {"settings": settings, "ruleset_before_images": {}, "completed": []}
-        with patch("scripts.execution.application.require_accepted_main"), patch("scripts.execution.application.verify_receipt"), \
+        with patch("scripts.execution.application.require_governance_main"), patch("scripts.execution.application.verify_receipt"), \
                 patch("scripts.execution.application.settings_plan", return_value=settings), \
                 patch("scripts.execution.application.require_ruleset_snapshot"), \
                 patch("scripts.execution.application.write_receipt"), patch("scripts.execution.application.apply_settings"), \
@@ -261,7 +261,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
         from unittest.mock import patch
         from scripts.execution import application
         receipt = {"settings": {}, "ruleset_before_images": {}, "completed": []}
-        with patch.object(application, "require_accepted_main"), patch.object(application, "verify_receipt"), \
+        with patch.object(application, "require_governance_main"), patch.object(application, "verify_receipt"), \
                 patch.object(application, "settings_plan", return_value={}), \
                 patch.object(application, "require_ruleset_snapshot", side_effect=ValueError("live rulesets changed")), \
                 patch.object(application, "apply_settings") as settings_write, \
@@ -278,7 +278,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
         settings = {r["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
                     for r in inventory["repositories"]}
         receipt = {"settings": settings, "ruleset_before_images": {}, "completed": []}
-        with patch.object(application, "require_accepted_main"), patch.object(application, "verify_receipt"), \
+        with patch.object(application, "require_governance_main"), patch.object(application, "verify_receipt"), \
                 patch.object(application, "settings_plan", return_value=settings), \
                 patch.object(application, "require_ruleset_snapshot", side_effect=[None, ValueError("live rulesets changed")]) as read, \
                 patch.object(application, "write_receipt"), patch.object(application, "apply_settings"), \
@@ -302,6 +302,45 @@ class ApplicationBoundaryTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 apply_settings("bijux", "outside-family", {})
             run.assert_not_called()
+
+
+class AuthorityPreparationAdmissionTests(unittest.TestCase):
+    def test_preparing_control_planes_stop_before_github_admission_and_writes(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        with patch.object(application, 'validated_inventory', return_value=load_inventory()), \
+                patch.object(application, 'require_accepted_main') as admitted, \
+                patch.object(application, 'apply_settings') as writes, \
+                patch.object(application, 'terraform') as terraform:
+            with self.assertRaisesRegex(ValueError, 'preparing authorities: bijux-iac, bijux-std'):
+                application.require_governance_main()
+        admitted.assert_not_called()
+        writes.assert_not_called()
+        terraform.assert_not_called()
+
+    def test_all_privileged_governance_entrypoints_require_the_preparation_guard(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        for operation in (application.verify_credential, application.api_preflight,
+                          lambda: application.preflight(True), lambda: application.apply({})):
+            with self.subTest(operation=operation), \
+                    patch.object(application, 'validated_inventory', return_value=load_inventory()), \
+                    patch.object(application, 'require_governance_main', side_effect=ValueError('authority preparation')) as guard, \
+                    patch.object(application, 'gh_api_json') as api, \
+                    patch.object(application, 'apply_settings') as writes, \
+                    patch.object(application, 'terraform') as terraform:
+                with self.assertRaisesRegex(ValueError, 'authority preparation'):
+                    operation()
+                guard.assert_called_once_with()
+                api.assert_not_called()
+                writes.assert_not_called()
+                terraform.assert_not_called()
+
+    def test_accepted_plan_inputs_bind_the_independent_authority_inventory(self):
+        import hashlib
+        from scripts.execution import application
+        expected=hashlib.sha256((ROOT/'inventory/repository-authority.json').read_bytes()).hexdigest()
+        self.assertEqual(application.input_digests()['inventory/repository-authority.json'],expected)
 
 
 if __name__ == "__main__":
