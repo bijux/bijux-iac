@@ -3,6 +3,15 @@
 Repository changes are recorded by pull request or merge request, newest first.
 Live governance applications and publications have separate execution receipts.
 
+### [!5](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/5) — Retained documentation admission compatibility
+
+- Admit the retained documentation publisher's exact empty release-tag fallback
+  only when `deploy-docs` declares no release-tag input in any letter case.
+  Keep the full admission job comparison and all release-publisher checks unchanged.
+- Reproduce the immutable Hub admission and reject declared tag inputs, changed
+  credentials, checkout, actor, permissions, scripts and other expressions.
+  This compatibility change performs no workflow dispatch or deployment.
+
 ### [!4](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/4) — Native manual publication control
 
 - Restore the existing manual family controller as a protected current-main
