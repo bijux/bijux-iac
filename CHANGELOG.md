@@ -3,6 +3,26 @@
 Repository changes are recorded by pull request or merge request, newest first.
 Live governance applications and publications have separate execution receipts.
 
+### [!3](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/3) — Accepted native mirror publication
+
+- Add a protected-main bridge after successful governance planning, passing
+  the actual parent pipeline identity to the shared publisher child. Preserve
+  the five physical validation jobs and keep publication credentials outside them.
+- Consume the `common` and `gitlab` capabilities from accepted GitHub `main`
+  commit `718205998095d71b8339e54fd7d0eb70e2cbd2dd`, preserving the independent
+  documentation pin and validating both managed checksum manifests.
+- Declare desired enabled publication only for std and IaC, requiring matching
+  active authority and literal publication booleans in both declarations. Keep
+  the ten future product routes planned, both hubs retained and the legacy
+  GitHub mutation refusal independent of publication state.
+- Retain Std's actual successful validation parent `3070347415` and publication
+  child `3070359580` as upstream evidence. IaC's first automatic child remains
+  qualification pending until operator readiness, merge and native readback;
+  this change does not claim it already ran or authorize infrastructure apply.
+- Document scoped credentials, disabled mirror execution, partial receipts and
+  separate owner-publication evidence. No remote settings change is performed
+  by the source adoption itself.
+
 ### [!2](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/2) — GitLab development authority and Ontology enrollment
 
 - Enroll the fourteen-member capability family with Ontology's authored Python

@@ -5,6 +5,13 @@ inventory covers fourteen repositories. GitHub development governance renders
 settings and `main` rulesets for twelve; the two canonical GitLab control planes
 have a separate desired mirror policy and read-only reconciliation contract.
 
+An optional protected-main bridge delegates accepted mirror delivery to the
+shared native GitLab publisher. Operator readiness, scoped credentials and
+independent destination acknowledgements remain required. See
+[accepted mirror publication](docs/mirror-publication.md) for adoption and
+recorded activation; enabling mirrors never enables historical GitHub governance
+for the two canonical GitLab authorities.
+
 The repository is intentionally narrow. It owns live administration; it does
 not own product code, package release logic, or the shared files synchronized
 into each repository.

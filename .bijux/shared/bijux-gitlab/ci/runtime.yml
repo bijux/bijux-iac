@@ -1,0 +1,43 @@
+{
+  "workflow": {
+    "rules": [
+      {
+        "if": "$CI_SERVER_URL == \"https://gitlab.com\" && $CI_PROJECT_ID == \"88948041\" && $CI_PROJECT_PATH == \"bijux-oss/bijux-std\" && $CI_COMMIT_BRANCH == \"ci/gitlab-runtime\" && ($CI_PIPELINE_SOURCE == \"push\" || $CI_PIPELINE_SOURCE == \"web\")"
+      },
+      {
+        "when": "never"
+      }
+    ]
+  },
+  "stages": [
+    "runtime"
+  ],
+  "ci / runtime build": {
+    "stage": "runtime",
+    "tags": [
+      "saas-linux-medium-amd64"
+    ],
+    "image": {
+      "name": "moby/buildkit@sha256:ef70e34495a1730a7c8e20e98fedd9fab328efd6ecfb37365ac464aa0627eb58",
+      "entrypoint": [
+        ""
+      ]
+    },
+    "timeout": "30 minutes",
+    "interruptible": false,
+    "script": [
+      "sh shared/bijux-gitlab/runtime/build.sh"
+    ],
+    "artifacts": {
+      "when": "always",
+      "expire_in": "14 days",
+      "paths": [
+        "artifacts/runtime-build/receipt.json",
+        "artifacts/runtime-build/buildkit.json"
+      ],
+      "exclude": [
+        "artifacts/runtime-build/auth/**"
+      ]
+    }
+  }
+}

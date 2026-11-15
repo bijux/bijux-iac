@@ -74,12 +74,12 @@ def validate_authority(inventory: dict) -> None:
                     or authority['mirror_publication'].get('enabled') is not False):
                 raise ValueError(f'{name}: retained GitHub authority cannot be enrolled or mirrored')
             continue
-        expected_status = 'preparing' if name in GITLAB_PROJECTS else 'planned'
         namespace = 'bijux-oss/' if name in OSS_REPOSITORIES else 'bijux-edu/'
         validate_identity(name + ' target', authority['target'], host='gitlab.com',
                           path=namespace + name, identifier=GITLAB_PROJECTS.get(name), provider='gitlab-ci')
-        if authority['status'] != expected_status:
-            raise ValueError(f'{name}: std/iac mirror publication remains gated; other product routes stay planned')
+        if ((name in GITLAB_PROJECTS and authority['status'] not in ('preparing', 'active'))
+                or (name not in GITLAB_PROJECTS and authority['status'] != 'planned')):
+            raise ValueError(f'{name}: only declared control planes may activate; other product routes stay planned')
         mirrors = authority['mirrors']
         if not isinstance(mirrors, list) or len(mirrors) != 2:
             raise ValueError(f'{name}: both publication mirrors must be explicitly declared')
@@ -94,10 +94,11 @@ def validate_authority(inventory: dict) -> None:
                 raise ValueError(f'{name}: mirror identity/execution differs from the approved route')
             seen_hosts.add(host)
         publication = authority['mirror_publication']
-        if (publication != {'enabled': False, 'writer': 'protected-publisher',
+        enabled = name in GITLAB_PROJECTS and authority['status'] == 'active'
+        if (publication != {'enabled': enabled, 'writer': 'protected-publisher',
                             'branches': ['main'], 'tags': 'approved-immutable'}
-                or publication.get('enabled') is not False):
-            raise ValueError(f'{name}: mirror publication stays disabled pending exact-ref acceptance')
+                or publication.get('enabled') is not enabled):
+            raise ValueError(f'{name}: publication must match its recorded control-plane activation')
 
 
 def load_authority(path: Path = AUTHORITY_PATH) -> dict:

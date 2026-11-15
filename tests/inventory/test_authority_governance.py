@@ -7,6 +7,41 @@ from scripts.inventory import authority_governance
 
 
 class AuthorityGovernanceTests(unittest.TestCase):
+    def test_recorded_operator_activation_can_enable_only_the_matching_control_plane(self):
+        from unittest.mock import patch
+        from scripts.inventory.authority import load_authority
+
+        for name in ('bijux-std', 'bijux-iac'):
+            authority = load_authority()
+            for other in authority['repositories']:
+                if other['name'] in ('bijux-std', 'bijux-iac'):
+                    other['authority']['status'] = 'preparing'
+                    other['authority']['mirror_publication']['enabled'] = False
+            row = next(row['authority'] for row in authority['repositories'] if row['name'] == name)
+            row['status'] = 'active'
+            row['mirror_publication']['enabled'] = True
+            policy = authority_governance.load_governance()
+            for other in policy['repositories']:
+                other['publication_enabled'] = False
+            next(row for row in policy['repositories'] if row['name'] == name)['publication_enabled'] = True
+            with self.subTest(repository=name), patch(
+                'scripts.inventory.authority_governance.load_authority', return_value=authority,
+            ):
+                authority_governance.validate_governance(policy, require_standard=False)
+
+    def test_activation_mismatch_does_not_change_desired_governance_or_authorize_application(self):
+        from unittest.mock import patch
+        from scripts.inventory.authority import load_authority
+
+        authority = load_authority()
+        row = authority['repositories'][0]['authority']
+        row['status'] = 'preparing'
+        row['mirror_publication']['enabled'] = False
+        policy = authority_governance.load_governance()
+        with patch('scripts.inventory.authority_governance.load_authority', return_value=authority):
+            with self.assertRaises(ValueError):
+                authority_governance.validate_governance(policy, require_standard=False)
+
     def test_exact_desired_profiles_do_not_claim_applied_state(self):
         module = authority_governance
         policy = module.load_governance()
@@ -16,7 +51,7 @@ class AuthorityGovernanceTests(unittest.TestCase):
             {r["name"] for r in policy["repositories"]}, {"bijux-std", "bijux-iac"}
         )
         for row in policy["repositories"]:
-            self.assertFalse(row["publication_enabled"])
+            self.assertTrue(row["publication_enabled"])
             self.assertEqual(row["github_mirror"]["app_id"], 5768636)
             self.assertEqual(
                 row["github_mirror"]["required_check"],
@@ -57,7 +92,7 @@ class AuthorityGovernanceTests(unittest.TestCase):
             lambda r: r["canonical"]["publication_environment"].update(
                 deploy_access_level=30
             ),
-            lambda r: r.update(publication_enabled=True),
+            lambda r: r.update(publication_enabled=False),
         ]:
             altered = copy.deepcopy(policy)
             modify(altered["repositories"][0])

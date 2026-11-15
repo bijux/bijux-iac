@@ -81,5 +81,10 @@ admission and unconditional GitLab-owned-mirror refusal. They also reject the an
 transport explicitly. The separately owned desired mirror policy and its read-only reconciliation
 distinguish observed drift from reader-hidden settings. Ontology enrollment
 requires the accepted fourteen-member standards manifest. Administrative
-application and restricted mirror publication require separate reviewed native
-admission and live evidence. This validation pipeline grants no infrastructure apply or publication.
+application retains its separate admission and live-evidence requirements.
+The optional [accepted mirror publication](mirror-publication.md) bridge runs
+after successful governance planning on protected main with explicit operator
+readiness. It delegates to the accepted shared child, which independently admits
+the actual parent/child, immutable evidence and merged review before writing.
+Validation jobs still grant no infrastructure application authority and receive
+no publication credentials.
