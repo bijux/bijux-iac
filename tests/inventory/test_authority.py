@@ -22,8 +22,8 @@ class RepositoryAuthorityTests(unittest.TestCase):
         for name, repository in self.repositories.items():
             authority = repository.get('authority')
             self.assertIsInstance(authority, dict, name)
-            self.assertEqual(authority['current']['host'], 'github.com')
-            self.assertEqual(authority['current']['path'], 'bijux/' + name)
+            self.assertEqual(authority['current']['host'], 'gitlab.com' if name in {'bijux-std','bijux-iac'} else 'github.com')
+            self.assertEqual(authority['current']['path'], ('bijux-oss/' if name in {'bijux-std','bijux-iac'} else 'bijux/') + name)
             if name in hubs:
                 self.assertEqual(authority['status'], 'retained')
                 self.assertEqual(authority['target'], authority['current'])
@@ -80,19 +80,15 @@ class RepositoryAuthorityTests(unittest.TestCase):
                 with self.subTest(repository=name), self.assertRaises(ValueError):
                     validate_authority(inventory)
 
-    def test_rendering_ignores_intended_authority_and_preserves_existing_github_resources(self):
-        import json
+    def test_legacy_rendering_separates_capability_family_from_current_authority(self):
         from unittest.mock import patch
-        from scripts.terraform.render import ROOT, render_payload
-        before = json.loads((ROOT / 'infra/github/repository-rulesets/terraform.auto.tfvars.json').read_text())
-        with patch('scripts.terraform.render.validated_inventory', return_value=load_inventory()):
-            after = render_payload()
-        for name in before['ruleset_repositories']:
-            self.assertIn(name, after['ruleset_repositories'])
-            self.assertEqual(before['ruleset_required_status_checks'][name], after['ruleset_required_status_checks'][name])
-        self.assertEqual(after,before)
-        self.assertNotIn('bijux-ontology', after['ruleset_repositories'])
-        self.assertIn('bijux-ontology', self.repositories)
+        from scripts.terraform.render import render_payload
+        inventory=load_inventory()
+        with patch('scripts.terraform.render.validated_inventory',return_value=inventory):
+            after=render_payload()
+        self.assertEqual(set(after['ruleset_repositories']),set(self.repositories)-{'bijux-std','bijux-iac'})
+        self.assertEqual(len(after['ruleset_repositories']),12)
+        self.assertIn('bijux-ontology',after['ruleset_repositories'])
 
     def test_inventory_validation_cannot_bypass_authority_policy(self):
         from scripts.inventory.validate import validate_inventory
@@ -121,6 +117,6 @@ class RepositoryAuthorityTests(unittest.TestCase):
 
     def test_current_live_membership_remains_bound_to_the_accepted_standard(self):
         live={row['name'] for row in load_inventory()['repositories']}
-        self.assertEqual(set(self.repositories)-live,{'bijux-ontology'})
+        self.assertEqual(set(self.repositories),live)
         self.assertEqual(self.repositories['bijux-ontology']['authority']['status'],'planned')
-        self.assertEqual(len(live),13)
+        self.assertEqual(len(live),14)

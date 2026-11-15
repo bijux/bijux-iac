@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "claim": "desired",
+  "repositories": [
+    {
+      "name": "bijux-std",
+      "publication_enabled": false,
+      "canonical": {
+        "host": "gitlab.com",
+        "path": "bijux-oss/bijux-std",
+        "id": 88948041,
+        "execution_provider": "gitlab-ci",
+        "default_branch": "main",
+        "main": {
+          "push_access_level": 0,
+          "merge_access_level": 40,
+          "allow_force_push": false
+        },
+        "publication_environment": {
+          "name": "publication",
+          "deploy_access_level": 40
+        }
+      },
+      "github_mirror": {
+        "host": "github.com",
+        "path": "bijux/bijux-std",
+        "id": 1212849789,
+        "actions_enabled": false,
+        "app_id": 5768636,
+        "admission_ruleset_id": 15229269,
+        "history_ruleset_id": 27309240,
+        "history_guard_bypass": [],
+        "history_rules": [
+          "deletion",
+          "non_fast_forward"
+        ],
+        "restrict_updates": true,
+        "allows_fetch_and_merge": false,
+        "admission_bypass": [
+          {
+            "actor_id": 5768636,
+            "actor_type": "Integration",
+            "bypass_mode": "always"
+          }
+        ],
+        "required_check": {
+          "context": "gitlab / validation",
+          "integration_id": 5768636
+        },
+        "pull_request_parameters": {
+          "allowed_merge_methods": [
+            "merge"
+          ],
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": true,
+          "required_review_thread_resolution": true,
+          "require_code_owner_review": false,
+          "require_last_push_approval": false,
+          "require_extra_approval_for_unattributed_changes": true,
+          "required_reviewers": []
+        }
+      },
+      "personal_mirror": {
+        "host": "gitlab.com",
+        "path": "bijux/bijux-std",
+        "id": 88949531,
+        "ci_enabled": false,
+        "shared_runners_enabled": false,
+        "group_runners_enabled": false,
+        "auto_devops_enabled": false,
+        "deploy_key_id": 22049447,
+        "merge_access_level": 0,
+        "allow_force_push": false
+      }
+    },
+    {
+      "name": "bijux-iac",
+      "publication_enabled": false,
+      "canonical": {
+        "host": "gitlab.com",
+        "path": "bijux-oss/bijux-iac",
+        "id": 88949971,
+        "execution_provider": "gitlab-ci",
+        "default_branch": "main",
+        "main": {
+          "push_access_level": 0,
+          "merge_access_level": 40,
+          "allow_force_push": false
+        },
+        "publication_environment": {
+          "name": "publication",
+          "deploy_access_level": 40
+        }
+      },
+      "github_mirror": {
+        "host": "github.com",
+        "path": "bijux/bijux-iac",
+        "id": 1223469411,
+        "actions_enabled": false,
+        "app_id": 5768636,
+        "admission_ruleset_id": 15864678,
+        "history_ruleset_id": 27309246,
+        "history_guard_bypass": [],
+        "history_rules": [
+          "deletion",
+          "non_fast_forward"
+        ],
+        "restrict_updates": true,
+        "allows_fetch_and_merge": false,
+        "admission_bypass": [
+          {
+            "actor_id": 5768636,
+            "actor_type": "Integration",
+            "bypass_mode": "always"
+          }
+        ],
+        "required_check": {
+          "context": "gitlab / validation",
+          "integration_id": 5768636
+        },
+        "pull_request_parameters": {
+          "allowed_merge_methods": [
+            "merge"
+          ],
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": true,
+          "required_review_thread_resolution": true,
+          "require_code_owner_review": false,
+          "require_last_push_approval": false,
+          "require_extra_approval_for_unattributed_changes": true,
+          "required_reviewers": []
+        }
+      },
+      "personal_mirror": {
+        "host": "gitlab.com",
+        "path": "bijux/bijux-iac",
+        "id": 88950131,
+        "ci_enabled": false,
+        "shared_runners_enabled": false,
+        "group_runners_enabled": false,
+        "auto_devops_enabled": false,
+        "deploy_key_id": 22049448,
+        "merge_access_level": 0,
+        "allow_force_push": false
+      }
+    }
+  ],
+  "product_publication": {
+    "bijux-ontology": {
+      "owner": "bijux-ontology",
+      "controller": "iac",
+      "mode": "manual-only",
+      "enabled": false,
+      "entrypoints": {},
+      "standard_capabilities": [
+        "common",
+        "python"
+      ]
+    }
+  }
+}

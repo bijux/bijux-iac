@@ -21,13 +21,14 @@ def run(context: str, commit: str = MAIN, *, identity: int = 1, conclusion: str 
 class AcceptedProducerTests(unittest.TestCase):
     def setUp(self):
         self.inventory = load_inventory()
+        self.inventory["repositories"] = [repo for repo in self.inventory["repositories"] if repo["name"] == "bijux-canon"]
         self.contexts = self.inventory["repositories"][0]["governance"]["branch_protection"]["required_status_checks"]
         self.inventory["repositories"] = self.inventory["repositories"][:1]
         self.inventory["repositories"][0]["governance"]["workflow_execution"] = {"main_verification": "existing-events"}
 
     def evidence(self, main_runs, pr_runs=(), prs=None):
         if prs is None:
-            prs = [{"number": 1, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}, "merge_commit_sha": MAIN, "base": {"ref": "main", "sha": "d" * 40, "repo": {"full_name": "bijux/bijux-iac"}}, "state": "closed", "user": {"login": "bijux"}}]
+            prs = [{"number": 1, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}, "merge_commit_sha": MAIN, "base": {"ref": "main", "sha": "d" * 40, "repo": {"full_name": "bijux/bijux-canon"}}, "state": "closed", "user": {"login": "bijux"}}]
         with patch.object(checks, "gh_api_json", side_effect=[{"sha": MAIN, "parents": [{"sha": "d" * 40}, {"sha": PR}]}, prs, {"sha": MAIN}]), \
                 patch.object(checks, "check_runs", side_effect=[main_runs, list(pr_runs)]):
             return checks.producer_evidence(self.inventory)
@@ -67,7 +68,7 @@ class AcceptedProducerTests(unittest.TestCase):
 
     def test_unrelated_merge_cannot_replace_the_current_main_pr(self):
         older = {"number": 1, "merged_at": "2026-10-09T12:00:00Z", "head": {"sha": "c" * 40}, "merge_commit_sha": "e" * 40}
-        newer = {"number": 2, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}, "merge_commit_sha": MAIN, "base": {"ref": "main", "sha": "d" * 40, "repo": {"full_name": "bijux/bijux-iac"}}, "state": "closed", "user": {"login": "bijux"}}
+        newer = {"number": 2, "merged_at": "2026-10-10T12:00:00Z", "head": {"sha": PR}, "merge_commit_sha": MAIN, "base": {"ref": "main", "sha": "d" * 40, "repo": {"full_name": "bijux/bijux-canon"}}, "state": "closed", "user": {"login": "bijux"}}
         receipt = self.evidence([run(context) for context in self.contexts], [run("policy / pr approval", PR)], [older, newer])
         self.assertEqual(receipt["repositories"][0]["accepted_pr"]["number"], 2)
         self.assertFalse(receipt["errors"])
@@ -79,13 +80,13 @@ class AcceptedProducerTests(unittest.TestCase):
         for pages in ({}, [{"check_runs": {}}], [{"check_runs": [malformed]}], [{"check_runs": [None]}]):
             with self.subTest(pages=pages), patch.object(checks.subprocess, "check_output", return_value=json.dumps(pages)):
                 with self.assertRaisesRegex(ValueError, "malformed"):
-                    checks.check_runs("bijux-iac", MAIN)
+                    checks.check_runs("bijux-canon", MAIN)
 
     def test_failed_discovery_records_all_repositories_without_any_write(self):
         self.inventory = load_inventory()
         with patch.object(checks, "gh_api_json", side_effect=subprocess.CalledProcessError(1, ["gh", "api"])):
             receipt = checks.producer_evidence(self.inventory)
-        self.assertEqual(len(receipt["repositories"]), 13)
-        self.assertEqual(len(receipt["errors"]), 13)
+        self.assertEqual(len(receipt["repositories"]), 12)
+        self.assertEqual(len(receipt["errors"]), 12)
         self.assertEqual(receipt["status"], "producers-unverified")
         self.assertIs(receipt["remote_writes"], False)

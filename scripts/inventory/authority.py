@@ -1,4 +1,4 @@
-"""Validate source authority preparation independently of live GitHub resources."""
+"""Validate current source identities independently of planned publication routes."""
 from __future__ import annotations
 
 import argparse
@@ -25,7 +25,7 @@ GITHUB_IDENTITIES = {
     'bijux-proteomics': 1134443068, 'bijux-phylogenetics': 1226329597,
     'bijux.github.io': 1037487722, 'bijux-masterclass': 1198852476,
 }
-PREPARING_PROJECTS = {'bijux-std': 88948041, 'bijux-iac': 88949971}
+GITLAB_PROJECTS = {'bijux-std': 88948041, 'bijux-iac': 88949971}
 PERSONAL_MIRRORS = {'bijux-std': 88949531, 'bijux-iac': 88950131}
 
 
@@ -55,15 +55,18 @@ def validate_authority(inventory: dict) -> None:
     names = [row['name'] for row in inventory['repositories']]
     if len(names) != 14 or set(names) != set(GITHUB_IDENTITIES):
         raise ValueError('authority must cover exactly the fourteen governed repositories')
-    if not set(FAMILY_REPOSITORIES) <= set(names) or not set(names) - set(FAMILY_REPOSITORIES) <= {'bijux-ontology'}:
-        raise ValueError('authority must cover every live governed repository; only ontology awaits accepted capability')
+    if set(FAMILY_REPOSITORIES) != set(names):
+        raise ValueError('authority must cover the complete governed capability family')
     for row in inventory['repositories']:
         name = row['name']
         authority = row.get('authority')
         require_keys(name, authority, {'current', 'target', 'status', 'mirrors', 'mirror_publication'})
-        current_provider = 'disabled' if name in PREPARING_PROJECTS else 'github-actions'
-        validate_identity(name + ' current', authority['current'], host='github.com',
-                          path='bijux/' + name, identifier=GITHUB_IDENTITIES[name], provider=current_provider)
+        if name in GITLAB_PROJECTS:
+            validate_identity(name + ' current', authority['current'], host='gitlab.com',
+                              path='bijux-oss/' + name, identifier=GITLAB_PROJECTS[name], provider='gitlab-ci')
+        else:
+            validate_identity(name + ' current', authority['current'], host='github.com',
+                              path='bijux/' + name, identifier=GITHUB_IDENTITIES[name], provider='github-actions')
         if name in HUB_REPOSITORIES:
             if (authority['status'] != 'retained' or authority['target'] != authority['current']
                     or authority['mirrors'] != [] or authority['mirror_publication'] != {
@@ -71,12 +74,12 @@ def validate_authority(inventory: dict) -> None:
                     or authority['mirror_publication'].get('enabled') is not False):
                 raise ValueError(f'{name}: retained GitHub authority cannot be enrolled or mirrored')
             continue
-        expected_status = 'preparing' if name in PREPARING_PROJECTS else 'planned'
+        expected_status = 'preparing' if name in GITLAB_PROJECTS else 'planned'
         namespace = 'bijux-oss/' if name in OSS_REPOSITORIES else 'bijux-edu/'
         validate_identity(name + ' target', authority['target'], host='gitlab.com',
-                          path=namespace + name, identifier=PREPARING_PROJECTS.get(name), provider='gitlab-ci')
+                          path=namespace + name, identifier=GITLAB_PROJECTS.get(name), provider='gitlab-ci')
         if authority['status'] != expected_status:
-            raise ValueError(f'{name}: only std and iac are enrolled for preparation; no cutover is applied')
+            raise ValueError(f'{name}: std/iac mirror publication remains gated; other product routes stay planned')
         mirrors = authority['mirrors']
         if not isinstance(mirrors, list) or len(mirrors) != 2:
             raise ValueError(f'{name}: both publication mirrors must be explicitly declared')

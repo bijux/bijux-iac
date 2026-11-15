@@ -1,13 +1,14 @@
 """Bind complete managed ruleset before-images without treating failed reads as absence."""
 from __future__ import annotations
 
+from scripts.inventory.roles import github_development_inventory
 from scripts.github.api import gh_api_json, list_rulesets
 from scripts.github.audit import RULESET_NAME
 
 
 def ruleset_snapshot(inventory: dict) -> dict:
     snapshots = {}
-    for repository in inventory["repositories"]:
+    for repository in github_development_inventory(inventory)["repositories"]:
         name = repository["name"]
         matches = [rule for rule in list_rulesets(name) if rule["target"] == "branch"
                    and rule["name"] in {RULESET_NAME, "main-pr-only-admin-bypass"}]
@@ -34,7 +35,7 @@ def ruleset_snapshot(inventory: dict) -> dict:
 
 
 def require_ruleset_snapshot(inventory: dict, expected: dict) -> None:
-    names = {repository["name"] for repository in inventory["repositories"]}
+    names = {repository["name"] for repository in github_development_inventory(inventory)["repositories"]}
     if not isinstance(expected, dict) or set(expected) != names:
         raise ValueError("saved preflight lacks complete managed ruleset before-images")
     if ruleset_snapshot(inventory) != expected:

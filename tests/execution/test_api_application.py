@@ -16,7 +16,7 @@ from tests.github.test_ruleset_transport import before_image, inventory
 class ApiApplicationTests(unittest.TestCase):
     def test_protected_api_preflight_binds_complete_plan_and_rereads_without_writes(self):
         inv = inventory()
-        images = {"bijux-iac": before_image()}
+        images = {"bijux-canon": before_image()}
         # Keep all generated test output under the owning repository artifacts.
         with tempfile.TemporaryDirectory(dir=application.ROOT / "artifacts") as directory:
             path = Path(directory)
@@ -55,21 +55,21 @@ class ApiApplicationTests(unittest.TestCase):
 
     def test_partial_api_failure_retains_completed_and_outstanding_operations(self):
         inv = inventory()
-        inv["repositories"].append({**copy.deepcopy(inv["repositories"][0]), "name": "bijux-std"})
-        images = {name: before_image(name) for name in ("bijux-iac", "bijux-std")}
+        inv["repositories"].append({**copy.deepcopy(inv["repositories"][0]), "name": "bijux-core"})
+        images = {name: before_image(name) for name in ("bijux-canon", "bijux-core")}
         receipt = {"transport": "github-api", "api_version": API_VERSION, "settings": {},
                    "ruleset_before_images": images, "ruleset_plan": api_plan(inv, images), "completed": []}
         with patch.object(application, "validated_inventory", return_value=inv), \
                 patch.object(application, "require_governance_main"), patch.object(application, "verify_receipt"), \
                 patch.object(application, "settings_plan", return_value={}), \
                 patch.object(application, "require_ruleset_snapshot"), patch.object(application, "write_receipt"), \
-                patch.object(application, "apply_api_operation", side_effect=[images["bijux-iac"], ValueError("live drift")]), \
+                patch.object(application, "apply_api_operation", side_effect=[images["bijux-canon"], ValueError("live drift")]), \
                 patch.object(application, "terraform") as terraform, \
-                patch.object(application, "audit", return_value=["bijux-std: missing required check"]):
+                patch.object(application, "audit", return_value=["bijux-core: missing required check"]):
             with self.assertRaisesRegex(ValueError, "live drift"):
                 application.apply(receipt)
         self.assertEqual(receipt["status"], "failed")
-        self.assertIn("ruleset:bijux-iac", receipt["completed"])
-        self.assertIn("ruleset:bijux-std", receipt["outstanding"])
+        self.assertIn("ruleset:bijux-canon", receipt["completed"])
+        self.assertIn("ruleset:bijux-core", receipt["outstanding"])
         self.assertIn("audit:family", receipt["outstanding"])
         terraform.assert_not_called()

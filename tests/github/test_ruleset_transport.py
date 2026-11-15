@@ -10,13 +10,13 @@ from scripts.github import ruleset_transport as transport
 from tests.github.ruleset_fixtures import healthy_ruleset
 
 
-def before_image(name="bijux-iac"):
+def before_image(name="bijux-canon"):
     return {**healthy_ruleset(), "id": 123, "source": f"bijux/{name}",
             "source_type": "Repository", "updated_at": "original", "node_id": "retained-node",
             "_links": {"self": {"href": "retained-link"}}}
 
 
-def inventory(name="bijux-iac", checks=None):
+def inventory(name="bijux-canon", checks=None):
     return {"repositories": [{"name": name, "governance": {"branch_protection": {
         "required_status_checks": checks or ["example", "iac / governance"]}}}]}
 
@@ -30,7 +30,7 @@ class ApiRulesetTransportTests(unittest.TestCase):
                                  "file_patterns": ["**/*.py"]}])
         before["rules"].append({"type": "required_signatures"})
         original = copy.deepcopy(before)
-        operation = transport.api_plan(inventory(), {"bijux-iac": before})[0]
+        operation = transport.api_plan(inventory(), {"bijux-canon": before})[0]
         self.assertEqual(before, original)
         self.assertEqual(operation["body"]["rules"][:3], original["rules"][:3])
         self.assertEqual(operation["body"]["rules"][-1], original["rules"][-1])
@@ -45,7 +45,7 @@ class ApiRulesetTransportTests(unittest.TestCase):
 
     def test_unchanged_plan_is_a_no_op_and_never_writes(self):
         before = before_image()
-        op = transport.api_plan(inventory(checks=["example"]), {"bijux-iac": before})[0]
+        op = transport.api_plan(inventory(checks=["example"]), {"bijux-canon": before})[0]
         self.assertEqual(op["actions"], ["no-op"])
         self.assertEqual(op["after"], before)
         with patch.object(transport, "gh_api_json", return_value=before), \
@@ -56,7 +56,7 @@ class ApiRulesetTransportTests(unittest.TestCase):
     def test_drift_or_removed_api_only_field_refuses(self):
         before = before_image()
         before["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"] = True
-        op = transport.api_plan(inventory(), {"bijux-iac": before})[0]
+        op = transport.api_plan(inventory(), {"bijux-canon": before})[0]
         for stage in ("before", "after"):
             changed = copy.deepcopy(op[stage])
             del changed["rules"][2]["parameters"]["require_extra_approval_for_unattributed_changes"]
@@ -75,12 +75,12 @@ class ApiRulesetTransportTests(unittest.TestCase):
             before = before_image()
             change(before)
             with self.assertRaises(ValueError):
-                transport.api_plan(inventory(), {"bijux-iac": before})
-        for snapshots in ({}, {"bijux-iac": None}):
+                transport.api_plan(inventory(), {"bijux-canon": before})
+        for snapshots in ({}, {"bijux-canon": None}):
             with self.assertRaises(ValueError):
                 transport.api_plan(inventory(), snapshots)
         with self.assertRaisesRegex(ValueError, "remove or replace"):
-            transport.api_plan(inventory(checks=["other"]), {"bijux-iac": before_image()})
+            transport.api_plan(inventory(checks=["other"]), {"bijux-canon": before_image()})
 
     def test_only_pollenomics_main_selector_is_narrowly_replaced(self):
         before = before_image("bijux-pollenomics")
@@ -90,11 +90,11 @@ class ApiRulesetTransportTests(unittest.TestCase):
         before = before_image()
         before["conditions"]["ref_name"]["include"] = ["refs/heads/main"]
         with self.assertRaises(ValueError):
-            transport.api_plan(inventory(), {"bijux-iac": before})
+            transport.api_plan(inventory(), {"bijux-canon": before})
 
     def test_failed_write_is_not_relabelled_as_success(self):
         before = before_image()
-        op = transport.api_plan(inventory(), {"bijux-iac": before})[0]
+        op = transport.api_plan(inventory(), {"bijux-canon": before})[0]
         with patch.object(transport, "gh_api_json", return_value=before) as read, \
                 patch.object(transport.subprocess, "run", side_effect=subprocess.CalledProcessError(1, ["gh"])), \
                 self.assertRaises(subprocess.CalledProcessError):

@@ -208,7 +208,10 @@ fi
 if [[ "${BIJUX_STD_ALLOW_LOCAL_SOURCE:-0}" != "1" ]]; then
   case "${std_git_url}" in
     https://github.com/bijux/bijux-std.git|git@github.com:bijux/bijux-std.git) ;;
-    *) echo "ERROR: accepted rollout requires bijux-std GitHub source; local verification must be explicit" >&2; exit 1 ;;
+    https://gitlab.com/bijux-oss/bijux-std|https://gitlab.com/bijux-oss/bijux-std.git) ;;
+    git@gitlab.com:bijux-oss/bijux-std|git@gitlab.com:bijux-oss/bijux-std.git) ;;
+    ssh://git@gitlab.com/bijux-oss/bijux-std.git|ssh://git@gitlab.com:22/bijux-oss/bijux-std.git) ;;
+    *) echo "ERROR: source verification requires canonical bijux-std GitHub source or explicitly selected GitLab source; local verification must be explicit" >&2; exit 1 ;;
   esac
 fi
 expected_sha=""
@@ -357,7 +360,16 @@ fi
 python3 - "${bijux_std_artifact_root}/source-provenance.json" "${std_git_url}" "${resolved_ref}" "${fetched_sha}" "${BIJUX_STD_ALLOW_LOCAL_SOURCE:-0}" "${BIJUX_STD_UPDATE_DRY_RUN:-0}" <<'PY_RECEIPT'
 import json,sys
 from pathlib import Path
-Path(sys.argv[1]).write_text(json.dumps(dict(result="planned",origin=sys.argv[2],requested_ref=sys.argv[3],resolved_sha=sys.argv[4],verification_only=sys.argv[5]=='1',dry_run=sys.argv[6]=='1'),indent=2)+'\n')
+record = dict(result="planned",origin=sys.argv[2],requested_ref=sys.argv[3],resolved_sha=sys.argv[4],verification_only=sys.argv[5]=='1',dry_run=sys.argv[6]=='1')
+if sys.argv[2] in {
+    "https://gitlab.com/bijux-oss/bijux-std", "https://gitlab.com/bijux-oss/bijux-std.git",
+    "git@gitlab.com:bijux-oss/bijux-std", "git@gitlab.com:bijux-oss/bijux-std.git",
+    "ssh://git@gitlab.com/bijux-oss/bijux-std.git", "ssh://git@gitlab.com:22/bijux-oss/bijux-std.git",
+}:
+    # Project identity names the configured canonical origin; acceptance is separate.
+    record["source_project"] = dict(host="gitlab.com", path="bijux-oss/bijux-std", id=88948041,
+                                    identity_basis="configured-canonical-origin")
+Path(sys.argv[1]).write_text(json.dumps(record,indent=2)+'\n')
 PY_RECEIPT
 if [[ "${BIJUX_STD_UPDATE_DRY_RUN:-0}" == "1" ]]; then
   for remote_dir_rel in "${update_dirs[@]}"; do

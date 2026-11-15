@@ -17,10 +17,10 @@ class InventoryContractTests(unittest.TestCase):
 
     def test_inventory_covers_the_complete_bijux_family(self) -> None:
         self.assertEqual(set(self.repositories), set(FAMILY_REPOSITORIES))
-        self.assertEqual(len(self.repositories), 13)
+        self.assertEqual(len(self.repositories), 14)
         self.assertEqual(
             Counter(repository["class"] for repository in self.repositories.values()),
-            {"foundation": 2, "hubs": 2, "rust": 4, "python": 4, "node": 1},
+            {"foundation": 2, "hubs": 2, "rust": 4, "python": 5, "node": 1},
         )
 
     def test_inventory_checks_match_accepted_standards_for_every_repository(self) -> None:
@@ -93,7 +93,7 @@ class InventoryContractTests(unittest.TestCase):
             for name, repository in self.repositories.items()
             if "planned" in repository["delivery"].values()
         }
-        self.assertEqual(planned, {"bijux-genomics", "bijux-ro-crate-node"})
+        self.assertEqual(planned, {"bijux-genomics", "bijux-ro-crate-node", "bijux-ontology"})
 
     def test_merged_branches_are_deleted_for_every_repository(self) -> None:
         for name, repository in self.repositories.items():
@@ -104,11 +104,11 @@ class InventoryContractTests(unittest.TestCase):
         payload = render_payload()
         self.assertEqual(
             set(payload["ruleset_repositories"]),
-            set(FAMILY_REPOSITORIES),
+            set(FAMILY_REPOSITORIES) - {"bijux-std", "bijux-iac"},
         )
         self.assertEqual(
             set(payload["ruleset_required_status_checks"]),
-            set(FAMILY_REPOSITORIES),
+            set(FAMILY_REPOSITORIES) - {"bijux-std", "bijux-iac"},
         )
 
 

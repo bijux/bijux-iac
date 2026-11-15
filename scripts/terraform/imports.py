@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 
+from scripts.inventory.roles import github_development_inventory
 from scripts.github.audit import RULESET_NAME
 from scripts.github.api import list_rulesets
 from scripts.terraform.render import render_payload
@@ -27,7 +28,7 @@ def discover_all(inventory: dict) -> dict[str, int | None]:
     # Complete authoritative discovery before importing anything. A failed lookup
     # must never leave a partial discovery mistaken for permission to create.
     return {repository["name"]: discover_ruleset(repository["name"])
-            for repository in inventory["repositories"]}
+            for repository in github_development_inventory(inventory)["repositories"]}
 
 
 def import_rulesets() -> None:

@@ -214,12 +214,14 @@ def validate_inventory(inventory: object) -> None:
     if missing_repositories:
         fail(f"missing governed repositories: {sorted(missing_repositories)}")
 
+    from scripts.inventory.authority_governance import load_governance, validate_governance
     from scripts.inventory.authority import validated_authority
     from scripts.inventory.publication import publisher_declarations
     from scripts.inventory.workflows import validate_workflow_execution
     try:
         validated_authority()
         publisher_declarations(inventory)
+        validate_governance(load_governance())
         validate_workflow_execution(inventory)
     except ValueError as error:
         fail(str(error))

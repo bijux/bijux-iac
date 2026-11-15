@@ -97,7 +97,7 @@
         {
           "key": "BIJUX_RELEASE_RUST_TOOLCHAIN",
           "type": "string",
-          "value": "1.86.0"
+          "value": "1.89.0"
         },
         {
           "key": "BIJUX_RELEASE_BUILD_MATRIX_JSON",
@@ -166,7 +166,7 @@
         {
           "key": "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
           "type": "string",
-          "value": "1.86.0"
+          "value": "1.89.0"
         },
         {
           "key": "BIJUX_CRATES_RELEASE_VERIFY_TOKEN_COMMAND",
@@ -335,9 +335,9 @@
             "contents": "read"
           },
           "env": {
-            "RUST_TOOLCHAIN_VERSION": "1.86.0",
-            "CARGO_DENY_VERSION": "0.18.3",
-            "CARGO_AUDIT_VERSION": "0.22.0",
+            "RUST_TOOLCHAIN_VERSION": "1.89.0",
+            "CARGO_DENY_VERSION": "0.18.9",
+            "CARGO_AUDIT_VERSION": "0.22.2",
             "CARGO_NEXTEST_VERSION": "0.9.100"
           },
           "jobs": {
@@ -5535,6 +5535,65 @@
             "controller": "iac"
           }
         }
+      }
+    },
+    {
+      "name": "bijux-ontology",
+      "standard_capabilities": [
+        "common",
+        "python"
+      ],
+      "python_workspace": {
+        "manager": "uv",
+        "requires_python": ">=3.11,<4",
+        "packages": [
+          {
+            "name": "bijux-ontology",
+            "directory": "packages/bijux-ontology",
+            "responsibility": "vocabulary and structural declaration checks"
+          },
+          {
+            "name": "bijux-ontology-adapters",
+            "directory": "packages/bijux-ontology-adapters",
+            "responsibility": "optional framework and data-format bridges"
+          },
+          {
+            "name": "bijux-ontology-reasoning",
+            "directory": "packages/bijux-ontology-reasoning",
+            "responsibility": "optional OWL profile checks"
+          },
+          {
+            "name": "bijux-ontology-dev",
+            "directory": "packages/bijux-ontology-dev",
+            "responsibility": "internal repository tooling"
+          }
+        ]
+      },
+      "repository_owned_workflows": [
+        ".github/workflows/verify.yml"
+      ],
+      "additional_required_status_checks": [
+        {
+          "context": "python / 3.11",
+          "workflow": "repository verification"
+        },
+        {
+          "context": "python / 3.13",
+          "workflow": "repository verification"
+        }
+      ],
+      "release_env": [],
+      "workflow_allowlist": [
+        "dependency-notice",
+        "github-policy",
+        "pr-approval-policy"
+      ],
+      "workflow_execution_policy": {
+        "schema": 1,
+        "dependency_pull_requests": "notification-only",
+        "dependency_merge": "owner-consolidation",
+        "publication_entrypoints": {},
+        "main_verification": "existing-events"
       }
     }
   ]

@@ -3,6 +3,23 @@
 Repository changes are recorded by pull request or merge request, newest first.
 Live governance applications and publications have separate execution receipts.
 
+### [!2](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/2) — GitLab development authority and Ontology enrollment
+
+- Enroll the fourteen-member capability family with Ontology's authored Python
+  3.11/3.13 verification, planned packages and explicitly disabled publication.
+- Project only the twelve GitHub development authorities into legacy Terraform,
+  imports, settings and check-producer audits. Reject both GitLab-owned mirrors
+  at direct mutation and saved-plan boundaries, independent of activation state.
+- Own the exact canonical GitLab and mirror policy separately, including the
+  publication App, immutable history guards, disabled mirror execution and
+  protected deployment roles. Compare provider observations without treating
+  hidden settings as proof or a matched readback as application authorization.
+- Consume accepted GitHub standards source
+  `d8a4bb1ca77c7ebb22765d21b038f40383caa1e2` from `main`, retain the common
+  capability and independent documentation pin, and regenerate the twelve
+  GitHub development authorities' Terraform inputs. This change performs no
+  infrastructure application or publication activation.
+
 ### [!1](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/1) — Canonical GitLab governance preparation
 
 - Add canonical GitLab source validation for contracts, Terraform formatting,

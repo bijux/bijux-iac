@@ -5,10 +5,10 @@
       "name": "bijux-iac",
       "authority": {
         "current": {
-          "host": "github.com",
-          "path": "bijux/bijux-iac",
-          "id": 1223469411,
-          "execution_provider": "disabled"
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-iac",
+          "id": 88949971,
+          "execution_provider": "gitlab-ci"
         },
         "target": {
           "host": "gitlab.com",
@@ -45,10 +45,10 @@
       "name": "bijux-std",
       "authority": {
         "current": {
-          "host": "github.com",
-          "path": "bijux/bijux-std",
-          "id": 1212849789,
-          "execution_provider": "disabled"
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-std",
+          "id": 88948041,
+          "execution_provider": "gitlab-ci"
         },
         "target": {
           "host": "gitlab.com",

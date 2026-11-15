@@ -19,6 +19,7 @@ from scripts.terraform.imports import import_rulesets, WORK_DIR
 from scripts.terraform.plans import require_representable_rulesets, validate_ruleset_changes
 from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
 from scripts.inventory.authority import validated_authority
+from scripts.inventory.roles import github_development_inventory, GITLAB_DEVELOPMENT_REPOSITORIES
 
 ARTIFACTS = ROOT / "artifacts/governance"
 RECEIPT = ARTIFACTS / "receipt.json"
@@ -33,7 +34,7 @@ def write_receipt(receipt: dict) -> None:
 
 
 def input_digests() -> dict[str, str]:
-    paths = [ROOT / "inventory/repositories.json", ROOT / "inventory/repository-authority.json", ROOT / "Makefile", ROOT / "makes/root.mk",
+    paths = [ROOT / "inventory/repositories.json", ROOT / "inventory/repository-authority.json", ROOT / "inventory/authority-governance.json", ROOT / "Makefile", ROOT / "makes/root.mk",
              ROOT / ".github/standards/bijux-std.sha"]
     for directory in ("scripts", "infra/github/repository-rulesets", ".github/workflows"):
         paths.extend(p for p in (ROOT / directory).rglob("*") if p.is_file() and ".terraform" not in p.parts)
@@ -60,16 +61,17 @@ def require_accepted_main() -> None:
 
 
 def require_governance_main() -> None:
-    """Prevent historical GitHub application from restoring preparing CI policy."""
+    """Keep historical GitHub application outside GitLab-owned mirror policy."""
     if os.environ.get("BIJUX_GITHUB_READ_URL"):
         raise ValueError("anonymous transport cannot authorize privileged governance")
-    validated_inventory()
     authority = validated_authority()
     blocked = sorted(row['name'] for row in authority['repositories']
-                     if row['authority']['status'] == 'preparing')
+                     if row['name'] in GITLAB_DEVELOPMENT_REPOSITORIES
+                     or row['authority']['current']['host'] == 'gitlab.com')
     if blocked:
-        raise ValueError('privileged GitHub governance is blocked for preparing authorities: '
+        raise ValueError('privileged GitHub governance is blocked for GitLab-owned mirrors: '
                          + ', '.join(blocked))
+    validated_inventory()
     require_accepted_main()
 
 
@@ -82,7 +84,7 @@ def terraform(*arguments: str, capture: bool = False) -> str:
 
 def settings_plan(inventory: dict, *, require_complete: bool = True) -> dict:
     changes = {}
-    for repository in inventory["repositories"]:
+    for repository in github_development_inventory(inventory)["repositories"]:
         name = repository["name"]
         live = gh_api_json(f"repos/bijux/{name}")
         if not isinstance(live, dict) or live.get("full_name") != f"bijux/{name}" or live.get("default_branch") != "main":
@@ -103,7 +105,7 @@ def verify_credential() -> dict:
     inventory = validated_inventory()
     settings_plan(inventory)
     access, errors = [], []
-    for repository in inventory["repositories"]:
+    for repository in github_development_inventory(inventory)["repositories"]:
         name = repository["name"]
         try:
             rulesets = [rule for rule in list_rulesets(name) if rule["name"] == "main-branch-protection"]
@@ -137,18 +139,20 @@ def preflight(privileged: bool, transport: str = "terraform") -> dict:
     if transport == "github-api":
         return api_preflight()
     validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
-    inventory = validated_inventory()
-    producers = None
     if privileged:
         require_governance_main()
-        producers = require_producers(inventory)
+    inventory = validated_inventory()
+    producers = require_producers(inventory) if privileged else None
     version = json.loads(subprocess.check_output(["terraform", "version", "-json"], text=True))
     if version.get("terraform_version") != TERRAFORM_VERSION:
         raise ValueError(f"Terraform must be {TERRAFORM_VERSION}")
     receipt = {"status": "preflight", "commit": git_head(), "privileged": privileged,
                "remote_writes": False,
                "input_digests": input_digests(), "tools": {"terraform": TERRAFORM_VERSION, "github_provider": "6.13.0"},
-               "settings": settings_plan(inventory, require_complete=privileged), "completed": [], "outstanding": []}
+               "settings": settings_plan(inventory, require_complete=privileged),
+               "authority_roles": {"github_development": [r["name"] for r in github_development_inventory(inventory)["repositories"]],
+                                   "gitlab_development": sorted(GITLAB_DEVELOPMENT_REPOSITORIES)},
+               "completed": [], "outstanding": []}
     if producers is not None:
         receipt["producer_evidence"] = producers
         receipt["ruleset_before_images"] = ruleset_snapshot(inventory)
@@ -165,7 +169,7 @@ def preflight(privileged: bool, transport: str = "terraform") -> dict:
     terraform("plan", "-input=false", f"-out={PLAN}")
     plan = json.loads(terraform("show", "-json", str(PLAN), capture=True))
     changes = plan.get("resource_changes", [])
-    allowed = {f'github_repository_ruleset.main["{r["name"]}"]' for r in inventory["repositories"]}
+    allowed = {f'github_repository_ruleset.main["{r["name"]}"]' for r in github_development_inventory(inventory)["repositories"]}
     validate_ruleset_changes(changes, allowed)
     if privileged:
         require_ruleset_snapshot(inventory, receipt["ruleset_before_images"])
@@ -238,7 +242,7 @@ def apply(receipt: dict) -> None:
     require_ruleset_snapshot(inventory, receipt.get("ruleset_before_images"))
     receipt["outstanding"] = [f"settings:{name}" for name, settings in current.items()
                               if compare_settings(name, settings["after"], settings["before"])] + [
-                                  f"ruleset:{repository['name']}" for repository in inventory["repositories"]
+                                  f"ruleset:{repository['name']}" for repository in github_development_inventory(inventory)["repositories"]
                               ] + ["audit:family"]
     receipt["status"] = "applying"
     # A write-capable operation may partially succeed; the operation ledger and
@@ -275,7 +279,7 @@ def apply(receipt: dict) -> None:
         try:
             errors = audit(inventory)
             receipt["audit"] = errors
-            for repository in inventory["repositories"]:
+            for repository in github_development_inventory(inventory)["repositories"]:
                 operation = f"ruleset:{repository['name']}"
                 if (receipt.get("transport") != "github-api" and operation in receipt["outstanding"]
                         and not any(error.startswith(repository['name'] + ":") for error in errors)):

@@ -49,7 +49,7 @@ class RulesetAuditTests(unittest.TestCase):
         with patch("scripts.github.audit.gh_api_json", side_effect=ValueError("denied")), \
                 patch("scripts.github.audit.list_rulesets", side_effect=ValueError("denied")):
             errors = audit(load_inventory())
-        self.assertEqual(len(errors), 2 * len(load_inventory()["repositories"]))
+        self.assertEqual(len(errors), 2 * (len(load_inventory()["repositories"]) - 2))
         self.assertTrue(any("bijux-pollenomics" in error for error in errors))
         self.assertTrue(any("bijux-gnss" in error for error in errors))
 

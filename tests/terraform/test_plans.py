@@ -5,7 +5,7 @@ import unittest
 
 from scripts.terraform.plans import OWNED_PARAMETERS, require_representable_rulesets, validate_ruleset_changes
 
-ADDRESS = 'github_repository_ruleset.main["bijux-iac"]'
+ADDRESS = 'github_repository_ruleset.main["bijux-canon"]'
 
 
 def resource(before, after, actions=None):
@@ -23,20 +23,20 @@ class RulesetPlanCustodyTests(unittest.TestCase):
             "github_repository_ruleset": {"block": {"block_types": {"rules": {"block": rules}}}}}}}}
 
     def test_actual_api_only_parameter_refuses_privileged_application(self):
-        snapshots = {"bijux-iac": {"rules": [{"type": "pull_request", "parameters": {
+        snapshots = {"bijux-canon": {"rules": [{"type": "pull_request", "parameters": {
             "required_approving_review_count": 0, "require_extra_approval_for_unattributed_changes": True}}]}}
         with self.assertRaisesRegex(ValueError, "pull_request.require_extra_approval_for_unattributed_changes"):
             require_representable_rulesets(snapshots, self.schema())
 
     def test_known_api_names_are_bound_to_actual_provider_schema(self):
-        snapshots = {"bijux-iac": {"rules": [{"type": "deletion"}, {"type": "required_status_checks",
+        snapshots = {"bijux-canon": {"rules": [{"type": "deletion"}, {"type": "required_status_checks",
                      "parameters": {"required_status_checks": [{"context": "iac / governance", "integration_id": 15368}],
                                     "strict_required_status_checks_policy": True}}]}, "bijux-std": None}
         require_representable_rulesets(snapshots, self.schema())
 
     def test_missing_schema_unknown_rules_and_unknown_false_parameters_refuse(self):
-        for snapshots, schema in [({}, {}), ({"bijux-iac": {"rules": [{"type": "unknown"}]}}, self.schema()),
-                                  ({"bijux-iac": {"rules": [{"type": "pull_request", "parameters": {"unknown": False}}]}}, self.schema())]:
+        for snapshots, schema in [({}, {}), ({"bijux-canon": {"rules": [{"type": "unknown"}]}}, self.schema()),
+                                  ({"bijux-canon": {"rules": [{"type": "pull_request", "parameters": {"unknown": False}}]}}, self.schema())]:
             with self.subTest(snapshots=snapshots), self.assertRaises(ValueError):
                 require_representable_rulesets(snapshots, schema)
 

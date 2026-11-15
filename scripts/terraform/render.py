@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 
+from scripts.inventory.roles import github_development_inventory
 from scripts.inventory.repositories import ROOT, validated_inventory
 
 
@@ -11,7 +12,7 @@ TFVARS_PATH = ROOT / "infra/github/repository-rulesets/terraform.auto.tfvars.jso
 
 
 def render_payload() -> dict:
-    inventory = validated_inventory()
+    inventory = github_development_inventory(validated_inventory())
     repositories = {repository["name"]: repository for repository in inventory["repositories"]}
     return {
         "ruleset_repositories": sorted(repositories),

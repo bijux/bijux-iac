@@ -20,7 +20,7 @@ class PublicationBoundaryTests(unittest.TestCase):
     def test_capabilities_come_from_the_accepted_standard_and_delivery_inventory(self):
         inventory = load_inventory()
         declarations = publisher_declarations(inventory)
-        self.assertEqual(len(declarations), 13)
+        self.assertEqual(len(declarations), 14)
         self.assertEqual(declarations["bijux-iac"]["deploy-docs"]["destination"],
                          {"repository": "bijux.github.io", "path": "/infrastructure/"})
         self.assertEqual(declarations["bijux-std"]["deploy-docs"]["destination"],
@@ -263,7 +263,7 @@ class PublicationBoundaryTests(unittest.TestCase):
     def test_audit_records_complete_family_when_live_reads_are_denied(self):
         with patch.object(live_publication, "gh_api_json", side_effect=ValueError("read denied")):
             receipt = live_publication.audit(load_inventory(), "123")
-        self.assertEqual(len(receipt["repositories"]), 13)
+        self.assertEqual(len(receipt["repositories"]), 14)
         self.assertEqual(receipt["status"], "drift")
         self.assertIs(receipt["remote_writes"], False)
         self.assertTrue(all(entry["mismatches"] for entry in receipt["repositories"]))

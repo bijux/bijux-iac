@@ -5,6 +5,7 @@ import copy
 import json
 import subprocess
 
+from scripts.inventory.roles import github_development_inventory, require_github_development_repository
 from scripts.github.api import gh_api_json
 from scripts.github.audit import RULESET_NAME, STATUS_APP_ID, ruleset_mismatches
 
@@ -13,6 +14,7 @@ API_VERSION = "2022-11-28"
 
 def api_plan(inventory: dict, snapshots: dict) -> list[dict]:
     """Refuse unrelated governance drift rather than repairing it in this transport."""
+    inventory = github_development_inventory(inventory)
     names = {repository["name"] for repository in inventory["repositories"]}
     if not isinstance(snapshots, dict) or set(snapshots) != names:
         raise ValueError("API plan needs every complete ruleset before-image")
@@ -72,6 +74,7 @@ def api_plan(inventory: dict, snapshots: dict) -> list[dict]:
 
 def apply_api_operation(operation: dict) -> dict:
     """Reread immediately before a single write and verify every retained field."""
+    require_github_development_repository(operation["repository"])
     endpoint = f"repos/bijux/{operation['repository']}/rulesets/{operation['id']}"
     if gh_api_json(endpoint) != operation["before"]:
         raise ValueError("live ruleset changed immediately before its API operation")

@@ -334,6 +334,34 @@
       }
     },
     {
+      "name": "bijux-ontology",
+      "class": "python",
+      "stack": "python",
+      "delivery": {
+        "documentation": "not-applicable",
+        "packages": "planned"
+      },
+      "settings": {},
+      "governance": {
+        "branch_protection": {
+          "enabled": true,
+          "engine": "ruleset",
+          "required_approving_review_count": 0,
+          "required_status_checks": [
+            "policy / github",
+            "policy / pr approval",
+            "std / standard",
+            "std / report",
+            "python / 3.11",
+            "python / 3.13"
+          ]
+        },
+        "workflow_execution": {
+          "main_verification": "existing-events"
+        }
+      }
+    },
+    {
       "name": "bijux-ro-crate-node",
       "class": "node",
       "stack": "node",

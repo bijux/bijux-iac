@@ -4,8 +4,10 @@ The inventory defines a shared execution policy for the governed family.
 `workflow_execution_defaults` requires dependency notifications, verification on
 human pull requests, and dependency changes consolidated by repository owners.
 Each repository exposes the same `governance.workflow_execution` override object.
-Masterclass retains `main_verification: existing-events` because its existing
-human verification and documentation deployment are managed separately.
+Masterclass and Ontology retain `main_verification: existing-events`.
+Masterclass owns its existing verification and documentation deployment;
+Ontology owns authored Python 3.11/3.13 verification on its existing events.
+Ontology has planned packages and no declared publication entrypoints.
 Documentation-capable repositories expose the manual `deploy-docs` entrypoint.
 The RO-Crate Node workspace instead declares a disabled manual `release-npm`
 capability and no documentation publisher.
@@ -49,7 +51,7 @@ policy at the immutable main commit and requires its adopted policy to match the
 inventory. Required check runs must belong to GitHub Actions, match the exact
 head, and have a latest completed successful result. Failed, pending, skipped,
 foreign-head, and foreign-application results do not establish verification.
-Masterclass retains its existing main verification selection; a failed main
+Masterclass and Ontology retain their existing main verification selection; a failed main
 check cannot borrow a successful pull request result.
 
 GitHub updates its native dependency graph when supported dependency manifests
@@ -63,7 +65,7 @@ present, is separate from product verification.
 Bijux Std owns canonical event projection, dependency notifications, bot guards,
 job names, and workflow conformance. Repository-owned workflows follow that
 contract while retaining their human verification steps. IaC owns typed family
-defaults, the Masterclass exception, consumer adoption checks, and evidence used
+defaults, the explicit Masterclass and Ontology exceptions, consumer adoption checks, and evidence used
 by governance and publication preflight.
 
 Generated content is refreshed from an exact accepted Bijux Std GitHub source.
