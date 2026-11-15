@@ -66,6 +66,8 @@ shared checksum manifests, then add its live settings/ruleset entry and render
 Terraform inputs. Full contracts and Terraform checks must pass before reviewing
 that change. Promotion does not authorize an infrastructure apply or release.
 
-Canonical GitLab live planning remains blocked until dedicated credentials,
-provider admission and target-protection reconciliation are reviewed. Historical
-GitHub application admission cannot admit GitLab jobs.
+Canonical GitLab read-only planning uses public anonymous reads and native
+pipeline admission, as described in [GitLab validation](gitlab-validation.md).
+Privileged application and target-protection reconciliation require their own
+reviewed admission and credentials. Historical GitHub application admission
+cannot admit GitLab jobs.
