@@ -54,6 +54,7 @@ MANAGED_REPOSITORIES = [
     "bijux-genomics",
     "bijux-iac",
     "bijux-masterclass",
+    "bijux-ontology",
     "bijux-phylogenetics",
     "bijux-pollenomics",
     "bijux-proteomics",
@@ -275,6 +276,48 @@ def node_workspace_profiles() -> dict[str, dict]:
     return profiles
 
 
+def repository_profiles() -> dict[str, dict]:
+    """Read reviewed capability records without adopting consumer-owned CI."""
+    path = STD_REPO / ".github/standards/repository-profiles.json"
+    if not path.exists():
+        return {}
+    source = json.loads(path.read_text(encoding="utf-8"))
+    if (set(source) != {"version", "repositories"} or type(source.get("version")) is not int
+            or source["version"] != 1 or not isinstance(source.get("repositories"), list)):
+        raise ValueError("Invalid canonical repository profile registry")
+    profiles = {}
+    for entry in source["repositories"]:
+        if not isinstance(entry, dict) or entry.get("name") not in MANAGED_REPOSITORIES or entry["name"] in profiles:
+            raise ValueError("Repository profile must identify one distinct governed repository")
+        profiles[entry["name"]] = copy.deepcopy(entry)
+    WORKFLOW_EXECUTION.validate_manifest(
+        {"workflow_inventory": load_workflow_inventory(), "repositories": list(profiles.values())},
+        list(profiles),
+    )
+    return profiles
+
+
+def reviewed_profiles() -> dict[str, dict]:
+    profiles = node_workspace_profiles()
+    additional = repository_profiles()
+    if profiles.keys() & additional.keys():
+        raise ValueError("Repository must belong to one canonical profile registry")
+    return {**profiles, **additional}
+
+
+def register_repository_profiles() -> None:
+    """Register reviewed profiles while preserving unrelated repository declarations."""
+    path = STD_REPO / ".github/standards/repo-config.manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    profiles = reviewed_profiles()
+    manifest["repositories"] = [
+        entry for entry in manifest["repositories"] if entry["name"] not in profiles
+    ] + list(profiles.values())
+    manifest["workflow_inventory"] = load_workflow_inventory()
+    WORKFLOW_EXECUTION.validate_manifest(manifest, MANAGED_REPOSITORIES)
+    path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+
 def register_node_workspaces() -> None:
     """Regenerate reviewed Node declarations without recapturing unrelated checkouts."""
     path = STD_REPO / '.github/standards/repo-config.manifest.json'
@@ -300,7 +343,7 @@ def main() -> None:
     WORKFLOW_EXECUTION.validate_inventory(inventory)
     manifest: dict = {"version": 2, "workflow_inventory": inventory, "repositories": []}
 
-    profiles = node_workspace_profiles()
+    profiles = reviewed_profiles()
     for repo_name in MANAGED_REPOSITORIES:
         if repo_name in profiles:
             manifest['repositories'].append(profiles[repo_name])
@@ -345,6 +388,13 @@ def main() -> None:
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description="Capture canonical repository configuration")
-    parser.add_argument("--node-workspaces-only",action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--node-workspaces-only", action="store_true")
+    mode.add_argument("--repository-profiles-only", action="store_true")
     args=parser.parse_args()
-    register_node_workspaces() if args.node_workspaces_only else main()
+    if args.node_workspaces_only:
+        register_node_workspaces()
+    elif args.repository_profiles_only:
+        register_repository_profiles()
+    else:
+        main()
