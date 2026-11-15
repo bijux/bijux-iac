@@ -10,7 +10,10 @@ from scripts.inventory.repositories import ROOT
 class MirrorPublicationPipelineTests(unittest.TestCase):
     def pipeline(self):
         result = subprocess.run(
-            ['ruby', '-ryaml', '-rjson', '-e', 'puts JSON.generate(YAML.safe_load(STDIN.read, aliases: false))'],
+            ['ruby', '-ryaml', '-rjson', '-e', 'documents = YAML.parse_stream(STDIN.read).children.map { |doc| '
+                                 'stream = Psych::Nodes::Stream.new; stream.children << doc; '
+                                 'YAML.safe_load(stream.to_yaml, aliases: false) }; '
+                                 'puts JSON.generate(documents.last)'],
             input=(ROOT / '.gitlab-ci.yml').read_text(), text=True, capture_output=True, check=True,
         )
         return json.loads(result.stdout)
@@ -34,7 +37,7 @@ class MirrorPublicationPipelineTests(unittest.TestCase):
         pipeline = self.pipeline()
         self.assertIn('publish / mirrors', pipeline)
         self.assertEqual(pipeline['publish / mirrors']['rules'], [
-            {'if': '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $BIJUX_MIRROR_PUBLICATION_READY == "true"'},
+            {'if': '"$[[ inputs.BIJUX_PUBLICATION_REQUEST ]]" != "1" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule") && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $BIJUX_MIRROR_PUBLICATION_READY == "true"'},
             {'when': 'never'},
         ])
         self.assertNotIn('environment', pipeline['governance-plan'])

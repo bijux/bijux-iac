@@ -70,8 +70,11 @@ Neither validation nor a matching readback authorizes infrastructure application
 Plan input receipts bind the capability, authority and desired-policy digests.
 See [accepted mirror publication](mirror-publication.md) for the protected child,
 runtime readiness, credential ownership and independent destination receipts.
-IaC's first automatic child remains qualification pending until actual hosted
-execution and both destination acknowledgements are retained.
+IaC's initial native child qualified commit
+`a757460ee36e1fb4dca344f9b84678a118dea3ad` with both destination
+acknowledgements and equal canonical/mirror refs; the linked publication guide
+records its native pipeline and GitHub PR evidence. Each later publication
+requires fresh source-bound admission and its own retained receipts.
 
 ## Read-only reconciliation
 

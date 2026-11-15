@@ -1,0 +1,61 @@
+spec:
+  inputs:
+    PUBLICATION_OPERATION:
+      type: string
+      default: preflight
+      options: [verify-credential, preflight, dispatch]
+    PUBLICATION_TARGET_REPOSITORY:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_WORKFLOW:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_COMMIT:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_TAG:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_CANDIDATE_RUN:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_PIPELINE_ID:
+      type: string
+      default: ""
+---
+workflow:
+  rules:
+    - if: '$CI_SERVER_URL == "https://gitlab.com" && $CI_PROJECT_PATH == "bijux-oss/bijux-iac" && $CI_PROJECT_ID == "88949971" && $CI_PIPELINE_SOURCE == "parent_pipeline" && $CI_DEFAULT_BRANCH == "main" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
+    - when: never
+
+stages: [publication]
+
+variables:
+  PUBLICATION_OPERATION: $[[ inputs.PUBLICATION_OPERATION ]]
+  PUBLICATION_TARGET_REPOSITORY: $[[ inputs.PUBLICATION_TARGET_REPOSITORY ]]
+  PUBLICATION_TARGET_WORKFLOW: $[[ inputs.PUBLICATION_TARGET_WORKFLOW ]]
+  PUBLICATION_TARGET_COMMIT: $[[ inputs.PUBLICATION_TARGET_COMMIT ]]
+  PUBLICATION_TARGET_TAG: $[[ inputs.PUBLICATION_TARGET_TAG ]]
+  PUBLICATION_TARGET_CANDIDATE_RUN: $[[ inputs.PUBLICATION_TARGET_CANDIDATE_RUN ]]
+  PUBLICATION_TARGET_PIPELINE_ID: $[[ inputs.PUBLICATION_TARGET_PIPELINE_ID ]]
+
+publication / control:
+  stage: publication
+  image: python:3.13.18-slim-bookworm
+  timeout: 20 minutes
+  interruptible: false
+  resource_group: publication-control
+  environment:
+    name: publication-control
+    action: prepare
+  before_script:
+    - mkdir -p artifacts/runtime artifacts/publication/control
+    - export TMPDIR="$CI_PROJECT_DIR/artifacts/runtime"
+    - apt-get update && apt-get install --yes --no-install-recommends ca-certificates git openssl ruby
+  script:
+    - python3 -B -m scripts.publication --operation '$[[ inputs.PUBLICATION_OPERATION ]]'
+  artifacts:
+    when: always
+    expire_in: 1 year
+    paths:
+      - artifacts/publication/control/
