@@ -18,9 +18,9 @@ planned GitLab targets, which do not change their current development authority.
 | --- | --- |
 | `current` | Current canonical source identity and execution provider |
 | `target` | Intended canonical host/path, stable ID where verified, and provider |
-| `status` | `preparing` for std/iac publication, `planned` for ten product routes, `retained` for both hubs |
+| `status` | `preparing` or desired `active` publication for std/iac, `planned` for ten product routes, `retained` for both hubs |
 | `mirrors` | Intended publication destinations with execution disabled |
-| `mirror_publication` | Disabled publication, approved main branch, immutable approved tags, protected publisher ownership |
+| `mirror_publication` | Publication enabled only with desired active control-plane status; approved main, immutable approved tags and protected publisher ownership |
 
 Eight routes target `bijux-oss`: std, iac, core, atlas, canon, ontology,
 RO-Crate Node and GNSS. Four target `bijux-edu`: pollenomics, genomics,
@@ -30,7 +30,7 @@ GitHub, their Actions provider, protections and publication backend.
 The canonical GitLab IDs are `88948041` for std and `88949971` for iac.
 Personal mirror IDs are `88949531` and `88950131`. Other undiscovered GitLab
 IDs remain null. Unknown keys, duplicate or missing roles, executing mirrors,
-changed hub routes, wildcard branches and activation claims fail validation.
+changed hub routes, wildcard branches and inconsistent activation claims fail validation.
 A desired route never substitutes for live API readback or accepted source.
 
 ## Governance by role
@@ -62,9 +62,16 @@ existing independent admission boundary.
 | Personal GitLab mirror | CI, shared/group runners and Auto DevOps disabled; only the exact declared deploy key may push `main`, no ordinary merge or force push |
 
 The policy binds stable project, repository, ruleset, App and deploy-key IDs.
-It declares `claim: desired` and publication disabled. Neither validation nor a
-matching readback authorizes infrastructure application or mirror publication.
+It declares `claim: desired` and enables publication for std and IaC as the
+approved target after operator readiness and merge, paired with `status: active`
+and `mirror_publication.enabled: true` in the authority inventory. The exact
+protection profiles remain mandatory and the two inventories must agree.
+Neither validation nor a matching readback authorizes infrastructure application.
 Plan input receipts bind the capability, authority and desired-policy digests.
+See [accepted mirror publication](mirror-publication.md) for the protected child,
+runtime readiness, credential ownership and independent destination receipts.
+IaC's first automatic child remains qualification pending until actual hosted
+execution and both destination acknowledgements are retained.
 
 ## Read-only reconciliation
 

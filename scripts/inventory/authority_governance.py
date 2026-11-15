@@ -9,6 +9,8 @@ from scripts.inventory.authority import (
     GITHUB_IDENTITIES,
     GITLAB_PROJECTS,
     PERSONAL_MIRRORS,
+    load_authority,
+    validate_authority,
 )
 from scripts.inventory.repositories import ROOT, FAMILY_REPOSITORIES, unique_keys
 
@@ -18,14 +20,19 @@ RULESETS = {"bijux-std": (15229269, 27309240), "bijux-iac": (15864678, 27309246)
 DEPLOY_KEYS = {"bijux-std": 22049447, "bijux-iac": 22049448}
 
 
-def desired_governance() -> dict:
+def desired_governance(publication_enabled: dict[str, bool] | None = None) -> dict:
+    publication_enabled = {} if publication_enabled is None else publication_enabled
+    if (not isinstance(publication_enabled, dict)
+            or not set(publication_enabled) <= set(GITLAB_PROJECTS)
+            or any(type(value) is not bool for value in publication_enabled.values())):
+        raise ValueError('Only declared control planes may have boolean publication activation')
     rows = []
     for name in ("bijux-std", "bijux-iac"):
         admission, history = RULESETS[name]
         rows.append(
             {
                 "name": name,
-                "publication_enabled": False,
+                "publication_enabled": publication_enabled.get(name, False),
                 "canonical": {
                     "host": "gitlab.com",
                     "path": "bijux-oss/" + name,
@@ -114,9 +121,15 @@ def load_governance(path: Path = PATH) -> dict:
 def validate_governance(
     policy: dict, *, require_standard: bool = True, standard: dict | None = None
 ) -> None:
+    authority = load_authority()
+    validate_authority(authority)
+    activation = {
+        row['name']: row['authority']['mirror_publication']['enabled']
+        for row in authority['repositories'] if row['name'] in GITLAB_PROJECTS
+    }
     # Canonical JSON comparison distinguishes booleans from integer identities.
     if json.dumps(policy, sort_keys=True) != json.dumps(
-        desired_governance(), sort_keys=True
+        desired_governance(activation), sort_keys=True
     ):
         raise ValueError(
             "authority governance differs from the exact desired role and publisher contract"

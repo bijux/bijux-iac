@@ -4,7 +4,7 @@
   "repositories": [
     {
       "name": "bijux-std",
-      "publication_enabled": false,
+      "publication_enabled": true,
       "canonical": {
         "host": "gitlab.com",
         "path": "bijux-oss/bijux-std",
@@ -75,7 +75,7 @@
     },
     {
       "name": "bijux-iac",
-      "publication_enabled": false,
+      "publication_enabled": true,
       "canonical": {
         "host": "gitlab.com",
         "path": "bijux-oss/bijux-iac",

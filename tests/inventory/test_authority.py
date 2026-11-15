@@ -13,7 +13,7 @@ class RepositoryAuthorityTests(unittest.TestCase):
         self.inventory = load_authority()
         self.repositories = {row['name']: row for row in self.inventory['repositories']}
 
-    def test_exact_routes_retain_two_hubs_and_prepare_only_the_two_control_planes(self):
+    def test_exact_routes_retain_two_hubs_and_enable_only_the_two_control_planes(self):
         oss = {'bijux-std', 'bijux-iac', 'bijux-core', 'bijux-atlas', 'bijux-canon',
                'bijux-ontology', 'bijux-ro-crate-node', 'bijux-gnss'}
         research = {'bijux-pollenomics', 'bijux-genomics', 'bijux-proteomics', 'bijux-phylogenetics'}
@@ -32,11 +32,11 @@ class RepositoryAuthorityTests(unittest.TestCase):
                 self.assertEqual(authority['target']['host'], 'gitlab.com')
                 self.assertEqual(authority['target']['path'],
                                  ('bijux-oss/' if name in oss else 'bijux-edu/') + name)
-                self.assertEqual(authority['status'], 'preparing' if name in {'bijux-std', 'bijux-iac'} else 'planned')
+                self.assertEqual(authority['status'], 'active' if name in {'bijux-std', 'bijux-iac'} else 'planned')
                 self.assertEqual({row['path'] for row in authority['mirrors']}, {'bijux/' + name})
                 self.assertEqual({row['host'] for row in authority['mirrors']}, {'github.com', 'gitlab.com'})
                 self.assertTrue(all(row['execution_enabled'] is False for row in authority['mirrors']))
-            self.assertIs(authority['mirror_publication']['enabled'], False)
+            self.assertIs(authority['mirror_publication']['enabled'], name in {'bijux-std', 'bijux-iac'})
 
     def test_identity_route_execution_and_activation_drift_fail_closed(self):
         from scripts.inventory.authority import validate_authority
@@ -50,11 +50,11 @@ class RepositoryAuthorityTests(unittest.TestCase):
             lambda row: row['authority']['target'].update(id=None),
             lambda row: row['authority']['target'].update(id='88949971'),
             lambda row: row['authority']['target'].update(execution_provider='github-actions'),
-            lambda row: row['authority'].update(status='active'),
+            lambda row: row['authority'].update(status='preparing'),
             lambda row: row['authority']['mirrors'][0].update(execution_enabled=True),
             lambda row: row['authority']['mirrors'][0].update(id=999),
             lambda row: row['authority']['mirrors'].pop(),
-            lambda row: row['authority']['mirror_publication'].update(enabled=True),
+            lambda row: row['authority']['mirror_publication'].update(enabled=False),
             lambda row: row['authority']['mirror_publication'].update(writer='any-job'),
             lambda row: row['authority']['mirror_publication'].update(branches=['*']),
             lambda row: row['authority']['mirror_publication'].update(tags='all'),
@@ -120,3 +120,33 @@ class RepositoryAuthorityTests(unittest.TestCase):
         self.assertEqual(set(self.repositories),live)
         self.assertEqual(self.repositories['bijux-ontology']['authority']['status'],'planned')
         self.assertEqual(len(live),14)
+
+    def test_only_known_control_planes_can_declare_enabled_publication(self):
+        from scripts.inventory.authority import validate_authority
+        for name in ('bijux-std', 'bijux-iac'):
+            altered = copy.deepcopy(self.inventory)
+            for other in altered['repositories']:
+                if other['name'] in {'bijux-std', 'bijux-iac'}:
+                    other['authority']['status'] = 'preparing'
+                    other['authority']['mirror_publication']['enabled'] = False
+            row = next(row['authority'] for row in altered['repositories'] if row['name'] == name)
+            row['status'] = 'active'
+            row['mirror_publication']['enabled'] = True
+            validate_authority(altered)
+        for name in set(self.repositories) - {'bijux-std', 'bijux-iac'}:
+            altered = copy.deepcopy(self.inventory)
+            row = next(row['authority'] for row in altered['repositories'] if row['name'] == name)
+            row['status'] = 'active'
+            row['mirror_publication']['enabled'] = True
+            with self.subTest(repository=name), self.assertRaises(ValueError):
+                validate_authority(altered)
+
+    def test_control_plane_activation_requires_matching_boolean_and_role_state(self):
+        from scripts.inventory.authority import validate_authority
+        for status, enabled in [('active', False), ('preparing', True), ('active', 1), ('preparing', 0)]:
+            altered = copy.deepcopy(self.inventory)
+            row = next(row['authority'] for row in altered['repositories'] if row['name'] == 'bijux-iac')
+            row['status'] = status
+            row['mirror_publication']['enabled'] = enabled
+            with self.subTest(status=status, enabled=enabled), self.assertRaises(ValueError):
+                validate_authority(altered)
