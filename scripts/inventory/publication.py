@@ -1,6 +1,7 @@
 """Applicable publisher declarations owned by the accepted shared standard."""
 from __future__ import annotations
 
+import copy
 import json
 import re
 import runpy
@@ -88,8 +89,20 @@ def validate_publisher(policy, workflow: str, document: dict) -> None:
     jobs = document.get("jobs")
     if not isinstance(jobs, dict) or not all(isinstance(job, dict) for job in jobs.values()):
         raise ValueError("publisher jobs must be objects")
-    if jobs.get("publication_admission") != policy.publication.controller_admission_job(workflow):
-        raise ValueError("publisher admission differs from the accepted standard")
+    expected_admission = policy.publication.controller_admission_job(workflow)
+    if jobs.get("publication_admission") != expected_admission:
+        # Dispatch input lookup is case-insensitive. Only an undeclared tag
+        # makes the retained docs fallback expression equivalent to empty.
+        # Compare the complete job to preserve every other admission boundary.
+        if workflow != "deploy-docs" or any(
+            isinstance(name, str) and name.casefold() == "release_tag"
+            for name in inputs
+        ):
+            raise ValueError("publisher admission differs from the accepted standard")
+        historical_admission = copy.deepcopy(expected_admission)
+        historical_admission["steps"][1]["env"]["PUBLICATION_TAG"] = "${{ inputs.release_tag || '' }}"
+        if jobs.get("publication_admission") != historical_admission:
+            raise ValueError("publisher admission differs from the accepted standard")
     for name, job in jobs.items():
         if name == "publication_admission":
             continue
