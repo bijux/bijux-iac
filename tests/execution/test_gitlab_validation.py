@@ -42,25 +42,19 @@ class GitLabValidationTests(unittest.TestCase):
                             and row.get('when') == 'never' for row in rules))
         self.assertEqual(rules[-1], {'when': 'never'})
 
-    def test_live_plan_is_visible_blocking_manual_gate_without_privileged_execution(self):
+    def test_live_plan_runs_real_anonymous_native_planner_and_uploads_no_state(self):
         pipeline = self.pipeline()
         job = pipeline['governance-plan']
-        self.assertEqual(job['environment'], {'name': 'governance-plan'})
+        self.assertEqual(job['stage'], 'governance')
+        self.assertNotIn('allow_failure', job)
+        self.assertNotIn('when', job)
+        self.assertNotIn('environment', job)
         self.assertEqual(job['resource_group'], 'governance-plan')
-        self.assertEqual(job['allow_failure'], False)
-        self.assertEqual(job['rules'][0]['when'], 'manual')
-        self.assertIn('CI_COMMIT_REF_PROTECTED', job['rules'][0]['if'])
-        self.assertIn('CI_DEFAULT_BRANCH', job['rules'][0]['if'])
-        self.assertIn('blocked-plan', '\n'.join(job['script']))
-        self.assertNotIn('scripts.execution.application', '\n'.join(job['script']))
+        self.assertIn('bash scripts/terraform/install.sh', job['script'])
+        self.assertIn('python3 -B -m scripts.execution.gitlab_plan', job['script'])
+        self.assertNotIn('governance-plan-unavailable', pipeline)
         self.assertNotIn('GITHUB_', (ROOT / '.gitlab-ci.yml').read_text())
-        blocked = pipeline['governance-plan-unavailable']
-        self.assertEqual(blocked['rules'][0]['when'], 'never')
-        self.assertEqual(blocked['rules'][0]['if'], job['rules'][0]['if'])
-        self.assertEqual(blocked['rules'][-1], {'when': 'on_success'})
-        self.assertIn('blocked-plan', '\n'.join(blocked['script']))
-        self.assertNotIn('environment', blocked)
-        self.assertNotIn('allow_failure', blocked)
+        self.assertEqual(job.get('artifacts', pipeline['default']['artifacts'])['paths'], ['artifacts/gitlab/'])
 
     def test_validation_context_binds_checkout_and_rejects_mirror_and_spoofed_sha(self):
         from scripts.execution import gitlab_validation
@@ -88,14 +82,14 @@ class GitLabValidationTests(unittest.TestCase):
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):
                 gitlab_validation.context({**environment, key: value})
 
-    def test_blocked_plan_exits_unsuccessfully_and_records_no_remote_writes(self):
-        result = subprocess.run([sys.executable, '-B', '-m', 'scripts.execution.gitlab_validation', 'blocked-plan'],
-                                cwd=ROOT, text=True, capture_output=True)
+    def test_native_plan_without_actual_job_identity_fails_and_records_no_application_authority(self):
+        from unittest.mock import patch
+        with patch.dict('os.environ', {}, clear=True):
+            result = subprocess.run([sys.executable, '-B', '-m', 'scripts.execution.gitlab_plan'],
+                                    cwd=ROOT, text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('dedicated read-only GitHub credential', result.stderr)
-        path = ROOT / 'artifacts/gitlab/governance-plan-blocked.json'
-        self.assertTrue(path.exists())
-        receipt = json.loads(path.read_text())
-        self.assertEqual(receipt['status'], 'blocked')
+        receipt = json.loads((ROOT / 'artifacts/gitlab/governance-plan.json').read_text())
+        self.assertEqual(receipt['status'], 'failed')
         self.assertIs(receipt['remote_writes'], False)
         self.assertIs(receipt['application_ready'], False)
+        self.assertEqual(receipt['github_authentication'], 'anonymous')

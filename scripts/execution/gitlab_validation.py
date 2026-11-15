@@ -43,17 +43,9 @@ def context(environment: dict[str, str]) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['context', 'blocked-plan'])
+    parser.add_argument('operation', choices=['context'])
     args = parser.parse_args()
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    if args.operation == 'blocked-plan':
-        reason = ('GitLab live planning requires a dedicated read-only GitHub credential '
-                  'and reviewed provider admission; GitHub workflow credentials/context cannot be reused. '
-                  'No infrastructure apply or publication is authorized by this validation pipeline.')
-        receipt = {'version': 1, 'status': 'blocked', 'reason': reason,
-                   'remote_writes': False, 'application_ready': False}
-        (ARTIFACTS / 'governance-plan-blocked.json').write_text(json.dumps(receipt, indent=2) + '\n')
-        raise SystemExit(reason)
     receipt = context(dict(os.environ))
     (ARTIFACTS / 'context.json').write_text(json.dumps(receipt, indent=2) + '\n')
     print(json.dumps(receipt, sort_keys=True))

@@ -2,9 +2,10 @@
 
 The canonical validation project is `bijux-oss/bijux-iac` on GitLab.com.
 Its pipeline executes repository contracts, Terraform formatting, readonly
-provider initialization and module validation, and the pinned shared standards
-integrity check. All generated outputs stay under `artifacts/`; Terraform state,
-binary plans and full plan JSON are never uploaded.
+provider initialization and module validation, the pinned shared standards
+integrity check, and an anonymous live governance plan. All generated outputs
+stay under `artifacts/`; Terraform state, binary plans and full plan JSON are
+never uploaded.
 
 The pipeline accepts canonical branch pushes, merge requests, protected tags,
 and protected default-branch web or scheduled execution. A branch push with an
@@ -21,28 +22,60 @@ Validation jobs receive no repository administration or publisher credentials.
 The Terraform installer downloads exactly 1.16.5 into `artifacts/tools` and
 checks the archive against the vendor's HTTPS SHA256 manifest.
 
-## Live governance planning remains blocked
+## Anonymous live governance planning
 
-The protected default-branch pipeline exposes `governance-plan` as a blocking
-manual job in the `governance-plan` environment, serialized by a resource group.
-Configure that environment as protected in GitLab before any credential is
-placed there. The current job writes an explicit blocked receipt and fails;
-it performs no live API reads, plan, infrastructure apply or publication.
-A green set of automatic validation jobs is not a completed live plan.
-Other pipeline contexts execute `governance-plan-unavailable`, which fails with
-the same blocked receipt and has no credential environment. This prevents a
-feature/MR pipeline from becoming merge-ready by omitting the manual main gate.
+`governance-plan` runs the existing unprivileged Terraform planner after the
+four validation gates. It uses public GitLab API reads to bind canonical project
+88949971, pipeline source/SHA/ref, and its actual running job. Same-project open
+merge requests must match their current head and target `main`; branch and tag
+plans must match the current native commit and protection state. Web and
+scheduled plans require the actual protected default branch. These identities
+admit a read-only plan; they grant no application or publication authority.
 
-The existing governance application path admits GitHub manual dispatch on the
-current accepted `bijux/bijux-iac` main commit. GitLab must obtain its own reviewed
-project/job/protected-ref admission and a dedicated repository-scoped read-only
-GitHub credential before the live plan can be enabled. Do not populate GitHub
-context variables to bypass that admission or copy an interactive GitHub/GLab
-session token into CI. Protected administration and apply require a separate
-review of exact inputs, settings discovery, provider representation, state
-imports, locks and saved-plan review.
+The planner reads the thirteen repositories in the accepted live inventory.
+It compares public repository settings, discovers managed rulesets, imports
+those rulesets into local state, and validates the resulting saved Terraform
+plan with the existing address, action and unowned-rule checks. Reader-hidden
+settings remain explicitly `unavailable_to_reader`; a successful read-only
+plan cannot certify administrative settings or complete ruleset custody.
 
-The historical GitHub workflows and GitHub ruleset resources are retained.
-This pipeline does not establish GitLab policy/approval equivalence, dispatch
-consumer publication, change mirror settings or prove a production cutover.
-Those surfaces require their own accepted standards and live governance evidence.
+Python and the locked GitHub provider share an execution-scoped anonymous GET
+gateway. Its only upstream is `https://api.github.com`: accepted repository
+metadata, ruleset lists/direct details and the provider's owner lookup. It
+rejects writes, credentials, redirects, other routes and unknown queries.
+Identical reads share one snapshot, including concurrent requests, so repeated
+provider imports do not spend the anonymous quota repeatedly. The snapshot
+limits upstream requests to 45, responses to one MiB, retries to three attempts,
+and its read window to 180 seconds. API denials, exhausted quotas, malformed
+responses and incomplete plans fail the job; there is no authenticated fallback.
+
+The child process receives an allowlisted environment with empty provider token,
+a separate home and configuration directory, and no interactive CLI/session or
+GitHub App credentials. It uses the pinned provider's anonymous client. Do not
+copy local GitHub/GLab session tokens into CI or broaden the publication App.
+No new GitLab credential variable is required for this public read-only gate.
+A read-scoped credential is a possible separately reviewed quota remedy, not a
+prerequisite established by the current public API contract.
+
+The native wrapper verifies source cleanliness before and after planning,
+rechecks the native source identity, and compares the planner's input digests
+with the current inputs. Only sanitized receipts are uploaded under
+`artifacts/gitlab/`: native context and CI configuration digest, the reviewable
+plan receipt, and bounded anonymous request status/hash evidence. Local state,
+import logs, binary plans and full plan JSON remain outside that upload path.
+
+## Application and authority cutover
+
+A successful plan has `privileged: false`, `remote_writes: false` and
+`application_ready: false`. It evaluates the accepted GitHub governance inputs,
+which still include historical GitHub Actions contexts for the preparing
+standards/infrastructure authorities. It must never apply those prospective
+changes or be described as completed GitLab delivery governance.
+
+The existing privileged GitHub entry points retain their separate accepted-main
+admission and preparing-authority refusal. They also reject the anonymous
+transport explicitly. Full authority cutover, accepted Ontology standards
+enrollment, administrative discovery/representation, saved-plan application,
+and restricted mirror publication require their own reviewed implementation
+and live evidence. The historical workflows and GitHub ruleset resources remain
+intact. This validation pipeline grants no infrastructure apply or publication.

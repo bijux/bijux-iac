@@ -61,6 +61,8 @@ def require_accepted_main() -> None:
 
 def require_governance_main() -> None:
     """Prevent historical GitHub application from restoring preparing CI policy."""
+    if os.environ.get("BIJUX_GITHUB_READ_URL"):
+        raise ValueError("anonymous transport cannot authorize privileged governance")
     validated_inventory()
     authority = validated_authority()
     blocked = sorted(row['name'] for row in authority['repositories']

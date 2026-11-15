@@ -308,7 +308,8 @@ class AuthorityPreparationAdmissionTests(unittest.TestCase):
     def test_preparing_control_planes_stop_before_github_admission_and_writes(self):
         from unittest.mock import patch
         from scripts.execution import application
-        with patch.object(application, 'validated_inventory', return_value=load_inventory()), \
+        with patch.dict('os.environ', {'BIJUX_GITHUB_READ_URL': ''}), \
+                patch.object(application, 'validated_inventory', return_value=load_inventory()), \
                 patch.object(application, 'require_accepted_main') as admitted, \
                 patch.object(application, 'apply_settings') as writes, \
                 patch.object(application, 'terraform') as terraform:
@@ -317,6 +318,20 @@ class AuthorityPreparationAdmissionTests(unittest.TestCase):
         admitted.assert_not_called()
         writes.assert_not_called()
         terraform.assert_not_called()
+
+    def test_anonymous_transport_cannot_supply_any_privileged_governance_path(self):
+        from unittest.mock import patch
+        from scripts.execution import application
+        for operation in (application.verify_credential, application.api_preflight,
+                          lambda: application.preflight(True), lambda: application.apply({})):
+            with self.subTest(operation=operation), \
+                    patch.dict('os.environ', {'BIJUX_GITHUB_READ_URL': 'http://127.0.0.1:1234/api/v3'}), \
+                    patch.object(application, 'require_accepted_main', side_effect=AssertionError('privileged admission attempted')), \
+                    patch.object(application, 'gh_api_json', side_effect=AssertionError('privileged API attempted')), \
+                    patch.object(application, 'apply_settings', side_effect=AssertionError('write attempted')), \
+                    patch.object(application, 'terraform', side_effect=AssertionError('Terraform attempted')):
+                with self.assertRaisesRegex(ValueError, 'anonymous transport cannot authorize privileged governance'):
+                    operation()
 
     def test_all_privileged_governance_entrypoints_require_the_preparation_guard(self):
         from unittest.mock import patch
