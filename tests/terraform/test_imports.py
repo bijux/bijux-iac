@@ -37,7 +37,8 @@ class ImportDiscoveryTests(unittest.TestCase):
         from unittest.mock import patch
         from scripts.github.api import list_rulesets
         for response in ({"message": "denied"}, [[{"id": True, "name": "main-branch-protection", "target": "branch"}]], [[None]]):
-            with self.subTest(response=response), patch("scripts.github.api.subprocess.check_output", return_value=json.dumps(response)):
+            with self.subTest(response=response), patch.dict("os.environ", {"BIJUX_GITHUB_READ_URL": ""}), \
+                    patch("scripts.github.api.subprocess.check_output", return_value=json.dumps(response)):
                 with self.assertRaises(ValueError):
                     list_rulesets("bijux-iac")
 

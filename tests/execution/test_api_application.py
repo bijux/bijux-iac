@@ -22,7 +22,7 @@ class ApiApplicationTests(unittest.TestCase):
             path = Path(directory)
             with patch.object(application, "ARTIFACTS", path), patch.object(application, "API_PLAN", path / "rulesets.json"), \
                     patch.object(application, "validated_inventory", return_value=inv), \
-                    patch.object(application, "require_accepted_main") as accepted, \
+                    patch.object(application, "require_governance_main") as accepted, \
                     patch.object(application, "require_producers", return_value={"status": "producers-verified"}), \
                     patch.object(application, "git_head", return_value="a" * 40), \
                     patch.object(application, "input_digests", return_value={"lock": "digest"}), \
@@ -47,7 +47,7 @@ class ApiApplicationTests(unittest.TestCase):
             writes.assert_not_called()
 
     def test_unprivileged_api_transport_and_unknown_choice_refuse(self):
-        with patch.object(application, "require_accepted_main") as accepted:
+        with patch.object(application, "require_governance_main") as accepted:
             for privileged, transport in [(False, "github-api"), (True, "unknown")]:
                 with self.assertRaises(ValueError):
                     application.preflight(privileged, transport)
@@ -60,7 +60,7 @@ class ApiApplicationTests(unittest.TestCase):
         receipt = {"transport": "github-api", "api_version": API_VERSION, "settings": {},
                    "ruleset_before_images": images, "ruleset_plan": api_plan(inv, images), "completed": []}
         with patch.object(application, "validated_inventory", return_value=inv), \
-                patch.object(application, "require_accepted_main"), patch.object(application, "verify_receipt"), \
+                patch.object(application, "require_governance_main"), patch.object(application, "verify_receipt"), \
                 patch.object(application, "settings_plan", return_value={}), \
                 patch.object(application, "require_ruleset_snapshot"), patch.object(application, "write_receipt"), \
                 patch.object(application, "apply_api_operation", side_effect=[images["bijux-iac"], ValueError("live drift")]), \

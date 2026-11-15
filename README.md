@@ -93,11 +93,22 @@ and availability by viewer permissions; Settings remains visible to repository
 administrators. Enabling a feature does not create discussions, project boards
 or wiki content. See [GitHub repository features](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository).
 
+The separate [authority inventory](inventory/repository-authority.json) records
+all fourteen current and intended roles, including the planned Ontology route.
+Eight routes target `bijux-oss`, four target `bijux-edu`, and both hubs retain
+GitHub authority. Only std/iac are enrolled for preparation. Ontology's live
+governance entry remains blocked on an accepted fourteen-member standards
+manifest; existing live validation retains exact parity with the accepted
+thirteen-member manifest. Routes do not activate settings or publication.
+See [repository authority](docs/repository-authority.md) and
+[GitLab validation](docs/gitlab-validation.md).
+
 ## Repository Layout
 
 | Path | Purpose |
 | --- | --- |
-| [`inventory/repositories.json`](inventory/repositories.json) | Authoritative family, settings, delivery state, and ruleset inputs |
+| [`inventory/repositories.json`](inventory/repositories.json) | Accepted live family, settings, delivery state, and ruleset inputs |
+| [`inventory/repository-authority.json`](inventory/repository-authority.json) | Fourteen current/target authority roles, verified identities and disabled publication routes |
 | [`scripts/inventory/`](scripts/inventory) | Family identity, canonical inventory formatting, and closed policy validation |
 | [`scripts/github/`](scripts/github) | API reads, complete live audit, and bounded repository settings writes |
 | [`scripts/terraform/`](scripts/terraform) | Deterministic ruleset inputs and authoritative imports |

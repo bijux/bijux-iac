@@ -1,7 +1,23 @@
 # Changelog
 
-Repository changes are recorded by pull request, newest first.
+Repository changes are recorded by pull request or merge request, newest first.
 Live governance applications and publications have separate execution receipts.
+
+### [!1](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/1) — Canonical GitLab governance preparation
+
+- Add canonical GitLab source validation for contracts, Terraform formatting,
+  Terraform validation and standards, followed by an anonymous read-only live
+  governance plan bound to its native pipeline, running job and current source.
+- Record fourteen repository authority routes, including Ontology and RO-Crate
+  Node, while retaining the thirteen-repository accepted live inventory until
+  the expanded standards manifest is accepted.
+- Block privileged legacy GitHub governance for the preparing standards and
+  infrastructure authorities, and reject the anonymous planning transport at
+  every privileged entry point. Infrastructure application and automated mirror
+  publication remain gated; a read-only plan is not authority cutover.
+- Share a bounded anonymous GitHub snapshot between Python discovery and the
+  locked Terraform provider, with no session or publisher credential fallback.
+  Retain sanitized plan/API receipts while keeping state and full plans local.
 
 ### [#39](https://github.com/bijux/bijux-iac/pull/39) — Governance history by pull request
 

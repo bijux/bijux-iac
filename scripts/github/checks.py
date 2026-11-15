@@ -143,5 +143,6 @@ def require_producers(inventory: dict) -> dict:
 
 
 if __name__ == "__main__":
-    require_producers(validated_inventory())
-    print("accepted check producers: OK (12 repositories)")
+    inventory = validated_inventory()
+    require_producers(inventory)
+    print(f"accepted check producers: OK ({len(inventory['repositories'])} repositories)")

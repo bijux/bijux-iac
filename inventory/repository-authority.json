@@ -1,0 +1,535 @@
+{
+  "version": 1,
+  "repositories": [
+    {
+      "name": "bijux-iac",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-iac",
+          "id": 1223469411,
+          "execution_provider": "disabled"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-iac",
+          "id": 88949971,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "preparing",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-iac",
+            "id": 1223469411,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-iac",
+            "id": 88950131,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-std",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-std",
+          "id": 1212849789,
+          "execution_provider": "disabled"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-std",
+          "id": 88948041,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "preparing",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-std",
+            "id": 1212849789,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-std",
+            "id": 88949531,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-core",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-core",
+          "id": 1037393076,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-core",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-core",
+            "id": 1037393076,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-core",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-atlas",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-atlas",
+          "id": 1159562239,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-atlas",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-atlas",
+            "id": 1159562239,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-atlas",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-canon",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-canon",
+          "id": 1200062971,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-canon",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-canon",
+            "id": 1200062971,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-canon",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-ontology",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-ontology",
+          "id": 1423184160,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-ontology",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-ontology",
+            "id": 1423184160,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-ontology",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-ro-crate-node",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-ro-crate-node",
+          "id": 1448868168,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-ro-crate-node",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-ro-crate-node",
+            "id": 1448868168,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-ro-crate-node",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-gnss",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-gnss",
+          "id": 1150170015,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-oss/bijux-gnss",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-gnss",
+            "id": 1150170015,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-gnss",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-pollenomics",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-pollenomics",
+          "id": 1189128916,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-edu/bijux-pollenomics",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-pollenomics",
+            "id": 1189128916,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-pollenomics",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-genomics",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-genomics",
+          "id": 1150170629,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-edu/bijux-genomics",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-genomics",
+            "id": 1150170629,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-genomics",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-proteomics",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-proteomics",
+          "id": 1134443068,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-edu/bijux-proteomics",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-proteomics",
+            "id": 1134443068,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-proteomics",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux-phylogenetics",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-phylogenetics",
+          "id": 1226329597,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "gitlab.com",
+          "path": "bijux-edu/bijux-phylogenetics",
+          "id": null,
+          "execution_provider": "gitlab-ci"
+        },
+        "status": "planned",
+        "mirrors": [
+          {
+            "host": "github.com",
+            "path": "bijux/bijux-phylogenetics",
+            "id": 1226329597,
+            "execution_enabled": false
+          },
+          {
+            "host": "gitlab.com",
+            "path": "bijux/bijux-phylogenetics",
+            "id": null,
+            "execution_enabled": false
+          }
+        ],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": "protected-publisher",
+          "branches": [
+            "main"
+          ],
+          "tags": "approved-immutable"
+        }
+      }
+    },
+    {
+      "name": "bijux.github.io",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux.github.io",
+          "id": 1037487722,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "github.com",
+          "path": "bijux/bijux.github.io",
+          "id": 1037487722,
+          "execution_provider": "github-actions"
+        },
+        "status": "retained",
+        "mirrors": [],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": null,
+          "branches": [],
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "bijux-masterclass",
+      "authority": {
+        "current": {
+          "host": "github.com",
+          "path": "bijux/bijux-masterclass",
+          "id": 1198852476,
+          "execution_provider": "github-actions"
+        },
+        "target": {
+          "host": "github.com",
+          "path": "bijux/bijux-masterclass",
+          "id": 1198852476,
+          "execution_provider": "github-actions"
+        },
+        "status": "retained",
+        "mirrors": [],
+        "mirror_publication": {
+          "enabled": false,
+          "writer": null,
+          "branches": [],
+          "tags": []
+        }
+      }
+    }
+  ]
+}

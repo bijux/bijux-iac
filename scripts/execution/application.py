@@ -18,6 +18,7 @@ from scripts.github.ruleset_transport import API_VERSION, api_plan, apply_api_op
 from scripts.terraform.imports import import_rulesets, WORK_DIR
 from scripts.terraform.plans import require_representable_rulesets, validate_ruleset_changes
 from scripts.inventory.repositories import ROOT, validated_inventory, merged_repository_settings, validate_owner
+from scripts.inventory.authority import validated_authority
 
 ARTIFACTS = ROOT / "artifacts/governance"
 RECEIPT = ARTIFACTS / "receipt.json"
@@ -32,7 +33,7 @@ def write_receipt(receipt: dict) -> None:
 
 
 def input_digests() -> dict[str, str]:
-    paths = [ROOT / "inventory/repositories.json", ROOT / "Makefile", ROOT / "makes/root.mk",
+    paths = [ROOT / "inventory/repositories.json", ROOT / "inventory/repository-authority.json", ROOT / "Makefile", ROOT / "makes/root.mk",
              ROOT / ".github/standards/bijux-std.sha"]
     for directory in ("scripts", "infra/github/repository-rulesets", ".github/workflows"):
         paths.extend(p for p in (ROOT / directory).rglob("*") if p.is_file() and ".terraform" not in p.parts)
@@ -56,6 +57,20 @@ def require_accepted_main() -> None:
                  os.environ.get("GITHUB_REF", ""), os.environ.get("GITHUB_SHA", ""))
     if subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip():
         raise ValueError("application requires a clean accepted checkout")
+
+
+def require_governance_main() -> None:
+    """Prevent historical GitHub application from restoring preparing CI policy."""
+    if os.environ.get("BIJUX_GITHUB_READ_URL"):
+        raise ValueError("anonymous transport cannot authorize privileged governance")
+    validated_inventory()
+    authority = validated_authority()
+    blocked = sorted(row['name'] for row in authority['repositories']
+                     if row['authority']['status'] == 'preparing')
+    if blocked:
+        raise ValueError('privileged GitHub governance is blocked for preparing authorities: '
+                         + ', '.join(blocked))
+    require_accepted_main()
 
 
 def terraform(*arguments: str, capture: bool = False) -> str:
@@ -84,7 +99,7 @@ def settings_plan(inventory: dict, *, require_complete: bool = True) -> dict:
 
 def verify_credential() -> dict:
     """Observe required administrative visibility without probing a write API."""
-    require_accepted_main()
+    require_governance_main()
     inventory = validated_inventory()
     settings_plan(inventory)
     access, errors = [], []
@@ -125,7 +140,7 @@ def preflight(privileged: bool, transport: str = "terraform") -> dict:
     inventory = validated_inventory()
     producers = None
     if privileged:
-        require_accepted_main()
+        require_governance_main()
         producers = require_producers(inventory)
     version = json.loads(subprocess.check_output(["terraform", "version", "-json"], text=True))
     if version.get("terraform_version") != TERRAFORM_VERSION:
@@ -171,7 +186,7 @@ def preflight(privileged: bool, transport: str = "terraform") -> dict:
 def api_preflight() -> dict:
     """Plan only check additions and the retained selector, with full API custody."""
     validate_owner(os.environ.get("TF_VAR_github_owner", "bijux"))
-    require_accepted_main()
+    require_governance_main()
     inventory = validated_inventory()
     producers = require_producers(inventory)
     receipt = {"status": "preflight", "commit": git_head(), "privileged": True,
@@ -214,7 +229,7 @@ def verify_receipt(receipt: dict) -> None:
 
 
 def apply(receipt: dict) -> None:
-    require_accepted_main()
+    require_governance_main()
     verify_receipt(receipt)
     inventory = validated_inventory()
     current = settings_plan(inventory)
