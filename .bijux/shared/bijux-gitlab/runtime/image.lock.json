@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "image": "registry.gitlab.com/bijux-oss/bijux-std/ci-runtime@sha256:33fdff28a20a70fda96b0171e6cc3c03400bcfb2041b515cac106acf9eeca34a",
+  "base_image": "mcr.microsoft.com/playwright@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d",
+  "platform": "linux/amd64",
+  "dockerfile_sha256": "36ffb059f238507beff4a0f069abd84631004481c7561f3515830d636e7d1543",
+  "build_script_sha256": "47674adf4aa079a53a9ddef9ecb6cec674b634828d2d7b29c93884a8c4dff70f",
+  "builder": {
+    "project_id": 88948041,
+    "pipeline_id": 3069399250,
+    "job_id": 18038530010,
+    "source_sha": "8c640719a4ea07fb1f444815338a3ae655e20ec1",
+    "image": "moby/buildkit@sha256:ef70e34495a1730a7c8e20e98fedd9fab328efd6ecfb37365ac464aa0627eb58"
+  }
+}

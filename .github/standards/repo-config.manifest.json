@@ -2940,47 +2940,6 @@
       ]
     },
     {
-      "name": "bijux-iac",
-      "release_env": [],
-      "workflow_allowlist": [
-        "dependency-notice",
-        "deploy-docs",
-        "github-policy",
-        "pr-approval-policy"
-      ],
-      "additional_required_status_checks": [
-        {
-          "context": "iac / contracts",
-          "workflow": "github-governance-plan"
-        },
-        {
-          "context": "iac / plan",
-          "workflow": "github-governance-plan"
-        },
-        {
-          "context": "iac / governance",
-          "workflow": "github-governance-plan"
-        }
-      ],
-      "workflow_execution_policy": {
-        "schema": 1,
-        "publication_entrypoints": {
-          "deploy-docs": {
-            "mode": "manual-only",
-            "controller": "iac",
-            "refs": "main-only",
-            "destination": {
-              "repository": "bijux.github.io",
-              "path": "/infrastructure/"
-            }
-          }
-        },
-        "dependency_pull_requests": "notification-only",
-        "dependency_merge": "owner-consolidation",
-        "main_verification": "accepted-pull-request"
-      }
-    },
-    {
       "name": "bijux-masterclass",
       "release_env": [],
       "dependabot": {
@@ -5595,6 +5554,51 @@
         "publication_entrypoints": {},
         "main_verification": "existing-events"
       }
+    },
+    {
+      "name": "bijux-iac",
+      "release_env": [],
+      "workflow_allowlist": [
+        "dependency-notice",
+        "deploy-docs",
+        "github-policy",
+        "pr-approval-policy"
+      ],
+      "additional_required_status_checks": [
+        {
+          "context": "iac / contracts",
+          "workflow": "github-governance-plan"
+        },
+        {
+          "context": "iac / plan",
+          "workflow": "github-governance-plan"
+        },
+        {
+          "context": "iac / governance",
+          "workflow": "github-governance-plan"
+        }
+      ],
+      "workflow_execution_policy": {
+        "schema": 1,
+        "publication_entrypoints": {
+          "deploy-docs": {
+            "mode": "manual-only",
+            "controller": "iac",
+            "refs": "main-only",
+            "destination": {
+              "repository": "bijux.github.io",
+              "path": "/infrastructure/"
+            }
+          }
+        },
+        "dependency_pull_requests": "notification-only",
+        "dependency_merge": "owner-consolidation",
+        "main_verification": "accepted-pull-request"
+      },
+      "standard_capabilities": [
+        "common",
+        "gitlab"
+      ]
     }
   ]
 }

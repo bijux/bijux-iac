@@ -1,0 +1,46 @@
+{
+  "workflow": {
+    "rules": [
+      {
+        "if": "$CI_SERVER_URL == \"https://gitlab.com\" && (($CI_PROJECT_ID == \"88948041\" && $CI_PROJECT_PATH == \"bijux-oss/bijux-std\") || ($CI_PROJECT_ID == \"88949971\" && $CI_PROJECT_PATH == \"bijux-oss/bijux-iac\")) && $CI_COMMIT_BRANCH == \"main\" && $CI_COMMIT_REF_PROTECTED == \"true\" && $CI_PIPELINE_SOURCE == \"parent_pipeline\""
+      },
+      {
+        "when": "never"
+      }
+    ]
+  },
+  "stages": [
+    "publication"
+  ],
+  "variables": {
+    "GIT_DEPTH": "0",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "publication / mirrors": {
+    "stage": "publication",
+    "image": "registry.gitlab.com/bijux-oss/bijux-std/ci-runtime@sha256:33fdff28a20a70fda96b0171e6cc3c03400bcfb2041b515cac106acf9eeca34a",
+    "tags": [
+      "saas-linux-medium-amd64"
+    ],
+    "timeout": "10 minutes",
+    "interruptible": false,
+    "resource_group": "accepted-mirror-publication",
+    "environment": {
+      "name": "publication",
+      "action": "prepare"
+    },
+    "before_script": [
+      "apt-get update && apt-get install --yes --no-install-recommends openssh-client openssl"
+    ],
+    "script": [
+      "case \"$CI_PROJECT_ID\" in\n  88948041) python3 -B shared/bijux-gitlab/publication/cli.py ;;\n  88949971) python3 -B .bijux/shared/bijux-gitlab/publication/cli.py ;;\n  *) exit 1 ;;\nesac"
+    ],
+    "artifacts": {
+      "when": "always",
+      "expire_in": "1 year",
+      "paths": [
+        "artifacts/publication/receipts/"
+      ]
+    }
+  }
+}
