@@ -66,13 +66,14 @@ def admit_repository(repository: str, workflow: str, commit: str, tag: str, acto
 
 
 
-def npm_candidate(repository: str, commit: str) -> dict:
-    value=os.environ.get('PUBLICATION_TARGET_CANDIDATE_RUN','')
+def npm_candidate(repository: str, commit: str, *, candidate_run: str | None = None, reader=None) -> dict:
+    value=os.environ.get('PUBLICATION_TARGET_CANDIDATE_RUN','') if candidate_run is None else candidate_run
     if not value.isdecimal() or int(value)<=0:
         raise ValueError('npm publication requires an explicit numeric candidate run')
     prefix=f'repos/bijux/{repository}/actions/'
-    workflow=gh_api_json(prefix+'workflows/package-candidate.yml')
-    candidate=gh_api_json(prefix+'runs/'+value)
+    read = gh_api_json if reader is None else reader
+    workflow=read(prefix+'workflows/package-candidate.yml')
+    candidate=read(prefix+'runs/'+value)
     full_name='bijux/'+repository
     if not (type(workflow.get('id')) is int and workflow['id']>0 and
             workflow.get('path')=='.github/workflows/package-candidate.yml' and

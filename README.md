@@ -1,5 +1,11 @@
 # bijux-iac
 
+Development, merge requests and CI live at
+[canonical GitLab](https://gitlab.com/bijux-oss/bijux-iac).
+[GitHub](https://github.com/bijux/bijux-iac) and
+[personal GitLab](https://gitlab.com/bijux/bijux-iac) are publication mirrors;
+send contributions to the canonical repository.
+
 `bijux-iac` owns repository governance for the Bijux family. Its capability
 inventory covers fourteen repositories. GitHub development governance renders
 settings and `main` rulesets for twelve; the two canonical GitLab control planes
@@ -104,8 +110,8 @@ or wiki content. See [GitHub repository features](https://docs.github.com/en/rep
 The separate [authority inventory](inventory/repository-authority.json) records
 all fourteen current and intended roles.
 Eight routes target `bijux-oss`, four target `bijux-edu`, and both hubs retain
-GitHub authority. Std and IaC currently use canonical GitLab sources; their
-mirror publication remains disabled until separately qualified. Their GitHub
+GitHub authority. Std and IaC use canonical GitLab sources with qualified
+native mirror publication. Their GitHub
 mirrors cannot enter legacy Terraform resources, imports, settings plans or
 mutation paths. Ontology retains its authored event verification and declares
 no enabled publisher. Inventory validation requires the exact accepted
@@ -298,11 +304,18 @@ hide the mismatch.
 
 ## Manual Publication
 
-[Publication control](docs/publication.md) documents the dedicated App,
-main-only credential environment, applicable publisher declarations, immutable
-requests, and complete read-only consumer audit. Repository merges never request
-publication. Consumers admit only the configured App identity on the exact
-accepted commit after required commit checks succeed.
+[Native publication control](docs/native-publication-control.md) provides the
+manual controller on canonical GitLab IaC, defaulting to preflight after five
+physical validation gates. Named typed inputs select an existing family
+publisher and immutable source; a protected child uses only the existing
+dispatch App token scoped to the actual destination. Manual requests exclude
+automatic mirroring, and repository merges never request a product publication.
+
+Std and IaC sources require native verification; the other family sources and
+retained Hub publisher preserve their existing GitHub admission. Documentation
+still builds and deploys on Hub. The [publisher protocol](docs/publication.md)
+describes immutable requests and consumer audit; the native controller does not
+enable a release or change that App's permissions.
 
 ## License
 

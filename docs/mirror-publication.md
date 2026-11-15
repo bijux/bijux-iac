@@ -51,9 +51,9 @@ CI/runners/Auto DevOps remain disabled on the mirrors.
 
 The checked-in inventories declare `active` and enabled publication as the
 desired target for both control planes. Operator readiness is configured only
-after merge-request qualification and review; it permits the first child to run
-after the accepted change reaches protected `main`. IaC's first automatic child
-remains qualification pending until that job acknowledges both destinations.
+after merge-request qualification and review. Each execution must independently
+admit protected current `main` and retain both destination acknowledgements;
+an earlier successful child does not qualify a later revision.
 The supported declaration states agree across both inventories:
 
 | Authority status | `mirror_publication.enabled` | Desired governance `publication_enabled` |
@@ -72,8 +72,18 @@ Std's publisher has actual protected-main evidence: parent pipeline
 all 83 validation jobs, followed by successful publication child
 [3070359580](https://gitlab.com/bijux-oss/bijux-std/-/pipelines/3070359580).
 The accepted GitHub `main` source is
-`718205998095d71b8339e54fd7d0eb70e2cbd2dd`. These Std observations do not certify
-that IaC's automatic child has executed.
+`718205998095d71b8339e54fd7d0eb70e2cbd2dd`.
+
+IaC's initial native publication independently qualified commit
+`a757460ee36e1fb4dca344f9b84678a118dea3ad`: parent pipeline
+[3070433200](https://gitlab.com/bijux-oss/bijux-iac/-/pipelines/3070433200)
+passed all five validations, and child
+[3070434852](https://gitlab.com/bijux-oss/bijux-iac/-/pipelines/3070434852)
+completed job [18044074441](https://gitlab.com/bijux-oss/bijux-iac/-/jobs/18044074441).
+GitHub acknowledged publication [PR42](https://github.com/bijux/bijux-iac/pull/42)
+as merged, and independent readback found the canonical and both mirror `main`
+refs equal to that commit. The child retains its destination receipt under
+`artifacts/publication/receipts/`; later executions require their own evidence.
 
 The legacy GitHub governance guard continues to refuse both canonical GitLab
 authorities by stable role and identity, including when publication is active.

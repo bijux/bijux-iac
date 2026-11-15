@@ -3,6 +3,29 @@
 Repository changes are recorded by pull request or merge request, newest first.
 Live governance applications and publications have separate execution receipts.
 
+### [!4](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/4) — Native manual publication control
+
+- Restore the existing manual family controller as a protected current-main
+  GitLab child, defaulting to preflight. Independently admit its actual owner,
+  parent, bridge, physical caller, merged review and five immutable validation
+  gates before protected credentials are read.
+- Use named typed request inputs with explicit child mapping, fixed native
+  parent identity and no arbitrary pipeline-variable forwarding. Manual web
+  and API requests exclude the automatic mirror bridge.
+- Qualify Std and IaC sources through native exact-SHA job and artifact evidence,
+  including complete Std unit coverage, while retaining existing capability,
+  release-tag, npm-candidate and legacy publisher policy. Hub remains the
+  documentation builder and publisher for both foundations.
+- Reuse only the existing dispatch App and its five permissions, mint a token
+  restricted to the selected destination, and refuse ambient credentials or the
+  separate mirror App. Credential verification and preflight never dispatch.
+- Retain sanitized outcomes across storage failures: known dispatch
+  acknowledgements remain known writes; unacknowledged attempts remain unknown
+  and are not retried. Local validation performs no release or deployment.
+- Record IaC's independently verified initial automatic mirror publication.
+  Hosted qualification of the restored manual controller remains pending;
+  this change does not claim a documentation deployment or product release.
+
 ### [!3](https://gitlab.com/bijux-oss/bijux-iac/-/merge_requests/3) — Accepted native mirror publication
 
 - Add a protected-main bridge after successful governance planning, passing

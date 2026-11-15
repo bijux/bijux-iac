@@ -1,11 +1,16 @@
 # Manual publication control
 
-The `publication-control` workflow in `bijux-iac` is the manual entry point for
-the family's applicable documentation deployments and releases. Merging to
-`main` never requests publication through this controller. Human pull requests
-retain their applicable build, test and CI checks; dependency proposals receive
-review notices. The accepted-PR execution policy avoids repeating those checks
-after merge. Masterclass retains its existing human workflow events.
+The [native IaC controller](native-publication-control.md) is the manual entry
+point for the family's applicable documentation deployments and releases. Select
+its named typed inputs on protected current `main`; it defaults to `preflight`.
+The former IaC GitHub Actions wrapper is not an operational entry point. Merging
+to `main` never requests deployment through this manual controller.
+
+This document describes publisher policy and consumer trust. The native guide
+owns controller admission, protected credentials, request inputs and receipts.
+Migrated Std and IaC sources require their native immutable evidence; retained
+GitHub development authorities keep their applicable Actions and merge checks.
+Masterclass retains its existing human workflow events.
 
 The accepted `bijux-std` manifest owns which canonical publishers each repository
 supports. Repositories with a documentation capability expose the same manual `deploy-docs` workflow,
@@ -26,41 +31,20 @@ run; it does not change a planned package into a published one. A request select
 40-character current source `main` commit. Releases also require an existing
 version tag resolving to exactly that commit. Documentation requests use no tag.
 
-## Configure the dedicated GitHub App
+## Dedicated App and consumer trust
 
-This is an automation identity, not another repository. Sign in to the personal
-`bijux` account, then open **Settings → Developer settings → GitHub Apps → New
-GitHub App** at <https://github.com/settings/apps/new>:
+The controller uses the existing `bijux-publication` App, ID `5265926`, and bot
+user `340710222`. Its permissions remain exactly **Actions: read and write**,
+**Contents: read-only**, **Checks: read-only**, **Variables: read-only**, and
+**Metadata: read-only**. Additional permissions or the separate mirror App
+refuse admission. No new App or automation account is needed.
 
-1. Name: **bijux-publication**. Homepage: `https://github.com/bijux/bijux-iac`.
-2. Disable **Active** under Webhook. No webhook URL or subscribed events are
-   needed. Keep user authorization and OAuth callbacks disabled.
-3. Set repository permissions to exactly **Actions: read and write**,
-   **Contents: read-only**, **Checks: read-only**, **Variables: read-only**, and
-   **Metadata: read-only**. Leave other repository and organization permissions
-   unset. No organization permissions are needed. The controller rejects
-   additional permissions.
-4. Permit installation only on the owning account. Create the App, record its
-   numeric **App ID**, and generate a private key. Never commit the key or put it
-   in a pull request, receipt, or chat.
-5. Install it only on the governed repositories with applicable publishers.
-   A Hub-routed foundation needs no separate installation. An owned foundation
-   site requires its own installation and trust variable before publication.
-   The token action restricts each token to the actual publication destination.
-6. Find the bot's numeric identity with
-   `gh api 'users/bijux-publication[bot]' --jq .id`. This is the **bot user ID**,
-   not the App ID or installation ID.
-
-In `bijux-iac`, create the **publication-control** environment:
-
-- Select deployment branches/tags; add only the branch `main`, with no tags.
-- Disable administrator bypass of protection rules. Keep the existing owner
-  review model; this configuration adds no additional reviewer requirement.
-- Add environment variables `BIJUX_PUBLICATION_APP_ID` (App ID),
-  `BIJUX_PUBLICATION_ACTOR` (`bijux-publication[bot]`), and
-  `BIJUX_PUBLICATION_ACTOR_ID` (bot user ID).
-- Add the environment secret `BIJUX_PUBLICATION_APP_PRIVATE_KEY` using the
-  downloaded key. Keep this key out of repository and organization secrets.
+The [native credential contract](native-publication-control.md#credential-contract)
+specifies protected GitLab `publication-control` variables and the File key.
+Never put the key in source, a receipt, an artifact, a pull request or chat.
+The selected installation must include the actual publication destination; a
+Hub-routed foundation needs only Hub. Each minted token is explicitly restricted
+to that single destination and independently read back before use.
 
 Each applicable consumer must first accept the exact shared standards projection
 with manual dispatch, immutable inputs, and its credential-free admission job.
@@ -70,9 +54,9 @@ operations; an absent variable intentionally rejects publication.
 
 The App needs Actions write to dispatch, Contents and Checks read to inspect the
 accepted target and its checks, and Variables read to inspect consumer trust.
-Hub-routed foundation source evidence uses unsigned public reads, including full
-check and pull-request pagination; the App token remains scoped to Hub. Both
-transports explicitly use the supported `2022-11-28` REST contract because exact
+Foundation native source evidence uses unsigned public reads; the App token
+remains scoped to Hub. Legacy publisher-admission reads include full check and
+pull-request pagination and use the supported `2022-11-28` REST contract because exact
 merge admission requires `merge_commit_sha`. The newer API removes that field;
 changing this contract requires qualifying a replacement merge proof. See
 [GitHub API versions](https://docs.github.com/en/rest/about-the-rest-api/api-versions)
@@ -95,25 +79,27 @@ publishing callers, admission dependencies, and consumer trust. It reports all
 repository mismatches before failing and retains
 `artifacts/publication/audit.json`. It performs no dispatch or remote write.
 
-Only dispatch the accepted `publication-control.yml` on IaC `main`, specifying
-`repository`, `workflow`, `commit`, and the release tag when applicable. Choose
-`verify-credential` to test the selected installation, App identity, current
-target commit, and required Contents, Checks, Actions, and Variables reads.
+Select `BIJUX_PUBLICATION_REQUEST="1"` on the native protected-main pipeline and
+supply the named `PUBLICATION_*` inputs documented in the native guide. Std and
+IaC requests additionally require their actual native source pipeline ID; legacy
+sources require that input empty. Choose `verify-credential` to test the selected
+installation, App identity, current target commit, and required Contents, Checks,
+Actions and Variables reads.
 
-Installation tokens are opaque credentials. Do not validate their length, parse
-their JWT payload, or truncate them in environment variables or Authorization
+Installation tokens are opaque credentials. Do not infer authority from their
+length, parse their JWT payload, or truncate them in variables or Authorization
 headers. GitHub's stateless token rollout is complete; newly minted tokens are
 about 520 characters and retain the `ghs_` prefix. The
 [GitHub rollout notice](https://github.blog/changelog/2026-10-02-stateless-github-app-installation-tokens-rolled-out/)
 sets November 30, 2026 as the retirement date for the temporary format override
 header. Production token creation follows GitHub's normal rollout behavior.
-Credential verification records only token character count and an observed
-format label after successful API reads. That diagnostic never controls admission
-and includes no credential bytes or decoded payload. Offline fixtures cover
-classic, stateless, longer, and unclassified opaque tokens without publication.
+The controller validates explicit token presence, safe transport representation,
+expiry, exact permissions and single-destination access. It never prints token
+bytes or decoded payloads. Token format or prefix does not establish authority.
 
-This operation tests key/token creation and read access; it does not test a
-write API or require consumer trust to have been configured yet.
+This operation tests key/token creation and read access, including the selected
+destination's existing bot trust variable. It does not test a write API or
+establish complete publisher admission.
 The execution job records immutable inputs before creating the token, so a
 missing installation or invalid key still retains an incomplete-operation
 receipt without implying credential verification or publication succeeded.
@@ -127,10 +113,12 @@ Credential verification can inspect an applicable planned publisher's
 installation. It does not establish source or Pages readiness. Package preflight and dispatch require their applicable accepted enablement;
 credential verification does not grant publication permission.
 
-The unprivileged admission job rejects a feature ref or invalid capability before
-entering the credential environment. The controller then verifies the App's
-identity and exact permissions, consumer admission, current accepted target,
-tag resolution, and all effective required commit checks from GitHub Actions.
+The five physical validations and read-only plan precede the child. The child
+independently admits its actual protected current-main controller and request
+before reading protected credentials. It then verifies App identity and exact
+permissions, consumer admission, current accepted target and tag resolution.
+Std and IaC use native exact-SHA source qualification; legacy sources and the
+retained Hub destination use their effective GitHub Actions checks.
 For accepted-PR execution, those checks and owner approval belong to the exact
 human PR head bound to the current normal main merge. Existing-event repositories
 retain their current-main check admission. A dependency notice cannot establish
@@ -145,8 +133,9 @@ accepted main before creating its Hub-scoped token, admits both source revisions
 and rechecks both at dispatch. A changed destination refuses the request. The
 receipt records the requested foundation revision separately from Hub's rendering
 revision and the public section route; it does not claim that Hub renders the
-foundation repository's source tree. `artifacts/publication/request.json` records the controller run and
-commit, target, tag, required checks, identity, and dispatch outcome. A successful
+foundation repository's source tree. Native receipts under
+`artifacts/publication/control/` record the controller, source, target, tag,
+evidence, identity and dispatch outcome. A successful
 dispatch receipt proves request acceptance, not successful publication; inspect
 the consumer workflow's final result separately.
 

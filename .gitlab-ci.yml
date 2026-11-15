@@ -1,3 +1,32 @@
+spec:
+  inputs:
+    BIJUX_PUBLICATION_REQUEST:
+      type: string
+      default: "0"
+      options: ["0", "1"]
+    PUBLICATION_OPERATION:
+      type: string
+      default: preflight
+      options: [verify-credential, preflight, dispatch]
+    PUBLICATION_TARGET_REPOSITORY:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_WORKFLOW:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_COMMIT:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_TAG:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_CANDIDATE_RUN:
+      type: string
+      default: ""
+    PUBLICATION_TARGET_PIPELINE_ID:
+      type: string
+      default: ""
+---
 # GitLab validates the source under review. Live governance remains a separate gate.
 workflow:
   rules:
@@ -9,11 +38,14 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_TAG && $CI_COMMIT_REF_PROTECTED == "true"'
     - if: '($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule") && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
+    - if: '$CI_PIPELINE_SOURCE == "api" && "$[[ inputs.BIJUX_PUBLICATION_REQUEST ]]" == "1" && $CI_DEFAULT_BRANCH == "main" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
     - when: never
 
 stages: [validation, governance, publication]
 
 variables:
+  BIJUX_PUBLICATION_REQUEST: $[[ inputs.BIJUX_PUBLICATION_REQUEST ]]
+  PUBLICATION_OPERATION: $[[ inputs.PUBLICATION_OPERATION ]]
   GIT_DEPTH: "0"
   PYTHONDONTWRITEBYTECODE: "1"
   PYTHONPYCACHEPREFIX: "$CI_PROJECT_DIR/artifacts/python/pycache"
@@ -69,7 +101,7 @@ publish / mirrors:
   stage: publication
   needs: [governance-plan]
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $BIJUX_MIRROR_PUBLICATION_READY == "true"'
+    - if: '"$[[ inputs.BIJUX_PUBLICATION_REQUEST ]]" != "1" && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule") && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $BIJUX_MIRROR_PUBLICATION_READY == "true"'
     - when: never
   variables:
     BIJUX_PARENT_PIPELINE_ID: "$CI_PIPELINE_ID"
@@ -77,4 +109,31 @@ publish / mirrors:
     include:
       - local: .bijux/shared/bijux-gitlab/ci/publication.yml
     strategy: depend
+  interruptible: false
+
+publish / request:
+  stage: publication
+  needs: [governance-plan]
+  rules:
+    - if: '"$[[ inputs.BIJUX_PUBLICATION_REQUEST ]]" == "1" && ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api") && $CI_DEFAULT_BRANCH == "main" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"'
+    - when: never
+  inherit:
+    variables: false
+  variables:
+    BIJUX_PARENT_PIPELINE_ID: "$CI_PIPELINE_ID"
+  trigger:
+    include:
+      - local: .gitlab/publication-control.yml
+        inputs:
+          PUBLICATION_OPERATION: $[[ inputs.PUBLICATION_OPERATION ]]
+          PUBLICATION_TARGET_REPOSITORY: $[[ inputs.PUBLICATION_TARGET_REPOSITORY ]]
+          PUBLICATION_TARGET_WORKFLOW: $[[ inputs.PUBLICATION_TARGET_WORKFLOW ]]
+          PUBLICATION_TARGET_COMMIT: $[[ inputs.PUBLICATION_TARGET_COMMIT ]]
+          PUBLICATION_TARGET_TAG: $[[ inputs.PUBLICATION_TARGET_TAG ]]
+          PUBLICATION_TARGET_CANDIDATE_RUN: $[[ inputs.PUBLICATION_TARGET_CANDIDATE_RUN ]]
+          PUBLICATION_TARGET_PIPELINE_ID: $[[ inputs.PUBLICATION_TARGET_PIPELINE_ID ]]
+    strategy: depend
+    forward:
+      yaml_variables: true
+      pipeline_variables: false
   interruptible: false

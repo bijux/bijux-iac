@@ -29,11 +29,27 @@ def context(environment: dict[str, str]) -> dict:
         if not value.isdecimal() or int(value) <= 0:
             raise ValueError('validation requires positive pipeline and job identifiers')
     source = environment.get('CI_PIPELINE_SOURCE')
-    if source not in {'push', 'merge_request_event', 'web', 'schedule'}:
+    if source not in {'push', 'merge_request_event', 'web', 'schedule', 'api'}:
         raise ValueError('validation requires a supported pipeline source')
     if (not environment.get('CI_COMMIT_REF_NAME')
             or environment.get('CI_COMMIT_REF_PROTECTED') not in {'true', 'false'}):
         raise ValueError('validation requires an explicit source ref and protection state')
+    if source == 'api':
+        if (environment.get('GITLAB_CI') != 'true'
+                or environment.get('BIJUX_PUBLICATION_REQUEST') != '1'
+                or environment.get('PUBLICATION_OPERATION') not in {'verify-credential', 'preflight', 'dispatch'}
+                or any(environment.get(key) != 'main' for key in
+                       ('CI_DEFAULT_BRANCH', 'CI_COMMIT_BRANCH', 'CI_COMMIT_REF_NAME'))
+                or environment.get('CI_COMMIT_REF_PROTECTED') != 'true'
+                or environment.get('CI_COMMIT_TAG')):
+            raise ValueError('API validation requires an explicit manual request on protected default main')
+        # The controller independently verifies native ownership before using publication credentials.
+        from scripts.execution.gitlab_plan import public_gitlab_json
+        branch = public_gitlab_json('/repository/branches/main')
+        if (not isinstance(branch, dict) or branch.get('name') != 'main'
+                or branch.get('protected') is not True or branch.get('default') is not True
+                or not isinstance(branch.get('commit'), dict) or branch['commit'].get('id') != commit):
+            raise ValueError('API validation requires the actual protected current default main')
     return {'version': 1, 'authority': 'validation-only',
             'project_path': PROJECT_PATH, 'project_id': PROJECT_ID, 'commit': commit,
             'pipeline_id': environment['CI_PIPELINE_ID'], 'job_id': environment['CI_JOB_ID'],

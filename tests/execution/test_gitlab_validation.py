@@ -14,7 +14,10 @@ class GitLabValidationTests(unittest.TestCase):
         path = ROOT / '.gitlab-ci.yml'
         self.assertTrue(path.is_file(), 'the canonical project needs an executable pipeline')
         result = subprocess.run(['ruby', '-ryaml', '-rjson', '-e',
-                                 'puts JSON.generate(YAML.safe_load(STDIN.read, aliases: false))'],
+                                 'documents = YAML.parse_stream(STDIN.read).children.map { |doc| '
+                                 'stream = Psych::Nodes::Stream.new; stream.children << doc; '
+                                 'YAML.safe_load(stream.to_yaml, aliases: false) }; '
+                                 'puts JSON.generate(documents.last)'],
                                 input=path.read_text(), text=True, capture_output=True, check=True)
         return json.loads(result.stdout)
 
