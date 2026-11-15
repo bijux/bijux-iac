@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import subprocess
 
+from scripts.inventory.roles import github_development_inventory
 from scripts.inventory.repositories import validated_inventory, merged_repository_settings
 from scripts.github.api import gh_api_json, list_rulesets
 
@@ -83,7 +84,7 @@ def compare_ruleset(repository: str, expected_checks: list[str], live_rulesets: 
 
 def audit(inventory: dict) -> list[str]:
     mismatches = []
-    for repository in inventory["repositories"]:
+    for repository in github_development_inventory(inventory)["repositories"]:
         name = repository["name"]
         try:
             live = gh_api_json(f"repos/bijux/{name}")
@@ -106,7 +107,7 @@ def main() -> None:
     mismatches = audit(inventory)
     if mismatches:
         raise SystemExit("\n".join(mismatches))
-    print(f"live governance: OK ({len(inventory['repositories'])} repositories)")
+    print(f"live governance: OK ({len(github_development_inventory(inventory)['repositories'])} GitHub development repositories)")
 
 
 if __name__ == "__main__":

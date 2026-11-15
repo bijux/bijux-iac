@@ -14,6 +14,7 @@ from scripts.execution.application import input_digests
 from scripts.execution.gitlab_validation import ARTIFACTS, PROJECT_ID, PROJECT_PATH, context
 from scripts.github.public_reads import NoRedirect, ReadGateway, strict_json
 from scripts.inventory.repositories import ROOT, validated_inventory
+from scripts.inventory.roles import github_development_inventory
 
 
 def public_gitlab_json(suffix: str) -> object:
@@ -122,7 +123,7 @@ def main() -> None:
         receipt.update(identity)
         require_clean_source()
         inventory = validated_inventory()
-        repositories = {row['name'] for row in inventory['repositories']}
+        repositories = {row['name'] for row in github_development_inventory(inventory)['repositories']}
         with ReadGateway(repositories, ARTIFACTS / 'github-public-reads.json') as gateway:
             environment = anonymous_environment(dict(os.environ), gateway.url, ROOT / 'artifacts/plan')
             subprocess.run([sys.executable, '-B', '-m', 'scripts.execution.application', 'plan'],

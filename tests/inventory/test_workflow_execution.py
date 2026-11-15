@@ -7,14 +7,14 @@ from scripts.inventory.workflows import validate_workflow_execution, merged_work
 
 
 class WorkflowExecutionTests(unittest.TestCase):
-    def test_complete_family_use_review_only_proposals_with_the_explicit_masterclass_exception(self):
+    def test_complete_family_uses_only_the_two_reviewed_authored_event_exceptions(self):
         inventory = load_inventory()
         validate_workflow_execution(inventory, require_standard=False)
         for repository in inventory['repositories']:
             policy = merged_workflow_execution(inventory, repository)
             self.assertEqual(policy['dependency_pull_requests'], 'notification-only')
             self.assertEqual(policy['dependency_merge'], 'owner-consolidation')
-            self.assertEqual(policy['main_verification'], 'existing-events' if repository['name'] == 'bijux-masterclass' else 'accepted-pull-request')
+            self.assertEqual(policy['main_verification'], 'existing-events' if repository['name'] in {'bijux-masterclass', 'bijux-ontology'} else 'accepted-pull-request')
 
     def test_missing_unknown_redundant_and_permissive_policy_fail_closed(self):
         original = load_inventory()
@@ -28,5 +28,16 @@ class WorkflowExecutionTests(unittest.TestCase):
             inventory = copy.deepcopy(original)
             row = next(row for row in inventory['repositories'] if row['name'] == repository['name'])
             row['governance']['workflow_execution'] = {'dependency_merge': 'owner-consolidation'}
+            with self.subTest(repository=row['name']), self.assertRaises(ValueError):
+                validate_workflow_execution(inventory, require_standard=False)
+
+    def test_authored_events_cannot_be_claimed_by_any_other_family_member(self):
+        original = load_inventory()
+        for repository in original['repositories']:
+            inventory = copy.deepcopy(original)
+            row = next(row for row in inventory['repositories'] if row['name'] == repository['name'])
+            row['governance']['workflow_execution'] = (
+                {} if row['name'] in {'bijux-masterclass', 'bijux-ontology'}
+                else {'main_verification': 'existing-events'})
             with self.subTest(repository=row['name']), self.assertRaises(ValueError):
                 validate_workflow_execution(inventory, require_standard=False)

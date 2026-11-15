@@ -22,9 +22,9 @@ def validate_workflow_execution(inventory: dict, *, require_standard: bool = Tru
         raise ValueError("workflow defaults must require review-only proposals and accepted-PR verification")
     for repository in inventory["repositories"]:
         overrides = repository["governance"].get("workflow_execution")
-        expected = {"main_verification": "existing-events"} if repository["name"] == "bijux-masterclass" else {}
+        expected = {"main_verification": "existing-events"} if repository["name"] in {"bijux-masterclass", "bijux-ontology"} else {}
         if overrides != expected:
-            raise ValueError(f"{repository['name']}: workflow exception must preserve only Masterclass's existing human events")
+            raise ValueError(f"{repository['name']}: workflow exception must preserve only reviewed Masterclass/Ontology authored events")
     if not require_standard:
         return
     manifest = json.loads((ROOT / ".github/standards/repo-config.manifest.json").read_text())

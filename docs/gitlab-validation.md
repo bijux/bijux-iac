@@ -32,8 +32,11 @@ plans must match the current native commit and protection state. Web and
 scheduled plans require the actual protected default branch. These identities
 admit a read-only plan; they grant no application or publication authority.
 
-The planner reads the thirteen repositories in the accepted live inventory.
-It compares public repository settings, discovers managed rulesets, imports
+The planner projects twelve GitHub development authorities from the fourteen
+governed capability profiles. Std and IaC are canonical GitLab authorities, so
+their mirror settings and obsolete Actions contexts cannot enter this Terraform
+plan. The anonymous gateway also rejects reads outside that twelve-repository
+projection. The planner compares public repository settings, discovers rulesets, imports
 those rulesets into local state, and validates the resulting saved Terraform
 plan with the existing address, action and unowned-rule checks. Reader-hidden
 settings remain explicitly `unavailable_to_reader`; a successful read-only
@@ -67,15 +70,16 @@ import logs, binary plans and full plan JSON remain outside that upload path.
 ## Application and authority cutover
 
 A successful plan has `privileged: false`, `remote_writes: false` and
-`application_ready: false`. It evaluates the accepted GitHub governance inputs,
-which still include historical GitHub Actions contexts for the preparing
-standards/infrastructure authorities. It must never apply those prospective
-changes or be described as completed GitLab delivery governance.
+`application_ready: false`. It evaluates only the twelve GitHub development authorities. Each run rebuilds
+artifact-owned local state from their fresh imports. The two GitLab control
+planes are absent from Terraform resources, imports, settings plans and allowed
+resource changes. A saved resource also cannot hide a mirror repository under
+an allowed address. No plan authorizes application or publication.
 
 The existing privileged GitHub entry points retain their separate accepted-main
-admission and preparing-authority refusal. They also reject the anonymous
-transport explicitly. Full authority cutover, accepted Ontology standards
-enrollment, administrative discovery/representation, saved-plan application,
-and restricted mirror publication require their own reviewed implementation
-and live evidence. The historical workflows and GitHub ruleset resources remain
-intact. This validation pipeline grants no infrastructure apply or publication.
+admission and unconditional GitLab-owned-mirror refusal. They also reject the anonymous
+transport explicitly. The separately owned desired mirror policy and its read-only reconciliation
+distinguish observed drift from reader-hidden settings. Ontology enrollment
+requires the accepted fourteen-member standards manifest. Administrative
+application and restricted mirror publication require separate reviewed native
+admission and live evidence. This validation pipeline grants no infrastructure apply or publication.

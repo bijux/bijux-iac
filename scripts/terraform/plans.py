@@ -1,6 +1,8 @@
 """Keep saved ruleset plans inside the authored protection surface."""
 from __future__ import annotations
 
+from scripts.inventory.roles import GITLAB_DEVELOPMENT_REPOSITORIES
+
 OWNED_RULES = {"deletion", "non_fast_forward", "pull_request", "required_status_checks"}
 OWNED_PARAMETERS = {
     "pull_request": {"allowed_merge_methods", "dismiss_stale_reviews_on_push", "require_code_owner_review",
@@ -80,6 +82,8 @@ def validate_ruleset_changes(changes: list, allowed: set[str]) -> None:
         if resource["mode"] == "data":
             continue
         address = resource.get("address")
+        if isinstance(address, str) and any('["' + name + '"]' in address for name in GITLAB_DEVELOPMENT_REPOSITORIES):
+            raise ValueError("GitLab-owned mirror cannot reenter a legacy Terraform plan")
         change = resource.get("change")
         if (address not in allowed or address in seen or not isinstance(change, dict)
                 or change.get("actions") not in [["no-op"], ["create"], ["update"]]):
@@ -89,6 +93,9 @@ def validate_ruleset_changes(changes: list, allowed: set[str]) -> None:
         if ((before is not None and not isinstance(before, dict)) or not isinstance(after, dict)
                 or unowned_rules(before) != unowned_rules(after)):
             raise ValueError("plan changes rules outside the authored protection surface")
+        if any(values.get("repository") in GITLAB_DEVELOPMENT_REPOSITORIES
+               for values in (before, after) if values is not None):
+            raise ValueError("GitLab-owned mirror cannot reenter a legacy Terraform plan")
         unknown = change.get("after_unknown", {})
         if not isinstance(unknown, dict) or unowned_rules(unknown):
             raise ValueError("plan cannot prove preservation of unrelated rules")

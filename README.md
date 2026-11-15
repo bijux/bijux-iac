@@ -1,9 +1,9 @@
 # bijux-iac
 
-`bijux-iac` is the live GitHub governance control plane for the Bijux
-repository family. It turns a reviewed repository inventory into repository
-settings and `main` branch rulesets, then audits GitHub to prove that the
-declared policy is active.
+`bijux-iac` owns repository governance for the Bijux family. Its capability
+inventory covers fourteen repositories. GitHub development governance renders
+settings and `main` rulesets for twelve; the two canonical GitLab control planes
+have a separate desired mirror policy and read-only reconciliation contract.
 
 The repository is intentionally narrow. It owns live administration; it does
 not own product code, package release logic, or the shared files synchronized
@@ -49,15 +49,15 @@ must be refreshed through the standards tooling, not edited locally.
 
 ## Governed Family
 
-The inventory contains thirteen repositories: two foundations, two hubs,
-four Rust products, four Python products, and one Node workspace product. Delivery state is
+The inventory contains fourteen repositories: two foundations, two hubs,
+four Rust products, five Python products, and one Node workspace product. Delivery state is
 operational metadata: `published` means the public surface exists,
 `planned` means it is deliberately not yet published, and `not-applicable`
 means that repository does not own the surface.
 
 | Repository | Role | Stack | Documentation | Packages |
 | --- | --- | --- | --- | --- |
-| `bijux-iac` | GitHub control plane | Terraform | Not applicable | Not applicable |
+| `bijux-iac` | Repository governance control plane | Terraform | Not applicable | Not applicable |
 | `bijux-ro-crate-node` | RO-Crate workspace product | Node | Not applicable | Planned |
 | `bijux-std` | Shared standards control plane | Make | Not applicable | Not applicable |
 | `bijux.github.io` | Documentation hub | Docs | Published | Not applicable |
@@ -66,6 +66,7 @@ means that repository does not own the surface.
 | `bijux-proteomics` | Product | Python | Published | Published |
 | `bijux-pollenomics` | Product | Python | Published | Published |
 | `bijux-phylogenetics` | Product | Python | Published | Published |
+| `bijux-ontology` | Ontology library and adapters | Python | Not applicable | Planned |
 | `bijux-core` | Product | Rust | Published | Published |
 | `bijux-atlas` | Product | Rust | Published | Published |
 | `bijux-gnss` | Product | Rust | Published | Published |
@@ -94,12 +95,14 @@ administrators. Enabling a feature does not create discussions, project boards
 or wiki content. See [GitHub repository features](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository).
 
 The separate [authority inventory](inventory/repository-authority.json) records
-all fourteen current and intended roles, including the planned Ontology route.
+all fourteen current and intended roles.
 Eight routes target `bijux-oss`, four target `bijux-edu`, and both hubs retain
-GitHub authority. Only std/iac are enrolled for preparation. Ontology's live
-governance entry remains blocked on an accepted fourteen-member standards
-manifest; existing live validation retains exact parity with the accepted
-thirteen-member manifest. Routes do not activate settings or publication.
+GitHub authority. Std and IaC currently use canonical GitLab sources; their
+mirror publication remains disabled until separately qualified. Their GitHub
+mirrors cannot enter legacy Terraform resources, imports, settings plans or
+mutation paths. Ontology retains its authored event verification and declares
+no enabled publisher. Inventory validation requires the exact accepted
+fourteen-member standards manifest. Routes do not activate publication.
 See [repository authority](docs/repository-authority.md) and
 [GitLab validation](docs/gitlab-validation.md).
 
@@ -109,8 +112,10 @@ See [repository authority](docs/repository-authority.md) and
 | --- | --- |
 | [`inventory/repositories.json`](inventory/repositories.json) | Accepted live family, settings, delivery state, and ruleset inputs |
 | [`inventory/repository-authority.json`](inventory/repository-authority.json) | Fourteen current/target authority roles, verified identities and disabled publication routes |
+| [`inventory/authority-governance.json`](inventory/authority-governance.json) | Desired canonical and mirror protections, exact publication identity, and Ontology publication ownership |
 | [`scripts/inventory/`](scripts/inventory) | Family identity, canonical inventory formatting, and closed policy validation |
-| [`scripts/github/`](scripts/github) | API reads, complete live audit, and bounded repository settings writes |
+| [`scripts/github/`](scripts/github) | GitHub development audit and bounded writes |
+| [`scripts/governance/`](scripts/governance) | Read-only canonical and mirror policy reconciliation |
 | [`scripts/terraform/`](scripts/terraform) | Deterministic ruleset inputs and authoritative imports |
 | [`scripts/execution/`](scripts/execution) | Accepted-main governance application and authenticated manual publication dispatch |
 | [`infra/github/repository-rulesets/`](infra/github/repository-rulesets) | Locked Terraform module for the family’s main rulesets |
@@ -120,8 +125,8 @@ See [repository authority](docs/repository-authority.md) and
 
 ## Governance Model
 
-All managed repositories currently use an active ruleset targeting the default
-branch. The baseline requires:
+The twelve GitHub development authorities use an active ruleset targeting the
+default branch. The baseline requires:
 
 - pull requests for changes to `main`
 - merge commits as the only merge method
@@ -138,9 +143,16 @@ The baseline check contexts are:
 - `std / standard`
 - `std / report`
 
-Repository-specific checks may be added in the inventory. The current Python
+Repository-specific checks may be added in the capability inventory. They enter
+legacy Terraform only for GitHub development authorities. The current Python
 release repositories also require `verification-ready` where that workflow is
 available.
+
+Std and IaC mirrors require `gitlab / validation` from publication App `5768636`.
+Only that App may bypass admission; a separate deletion and force-push guard has
+no bypass actors. GitHub Actions and personal GitLab mirror CI remain disabled.
+See [role-specific governance](docs/repository-authority.md) for the complete
+desired policy and observation requirements.
 
 Merged pull-request branches are deleted automatically at the repository
 settings layer. That setting does not weaken the ruleset prohibition against

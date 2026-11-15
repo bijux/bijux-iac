@@ -5,11 +5,13 @@ import argparse
 import json
 import subprocess
 
+from scripts.inventory.roles import require_github_development_repository
 from scripts.inventory.repositories import validated_inventory, merged_repository_settings, validate_owner
 
 
 def apply_settings(owner: str, name: str, settings: dict[str, object]) -> None:
     validate_owner(owner)
+    require_github_development_repository(name)
     inventory = validated_inventory()
     repository = next((repo for repo in inventory["repositories"] if repo["name"] == name), None)
     if repository is None or settings != merged_repository_settings(inventory, repository):

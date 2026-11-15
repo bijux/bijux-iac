@@ -16,12 +16,12 @@ HEAD = 'b' * 40
 class AcceptedVerificationTests(unittest.TestCase):
     def setUp(self):
         self.inventory = load_inventory()
-        self.inventory['repositories'] = self.inventory['repositories'][:1]
+        self.inventory['repositories'] = [repo for repo in self.inventory['repositories'] if repo['name'] == 'bijux-canon']
         self.repository = self.inventory['repositories'][0]
         self.contexts = self.repository['governance']['branch_protection']['required_status_checks']
         self.main = {'sha': MAIN, 'parents': [{'sha': 'c' * 40}, {'sha': HEAD}]}
         self.pr = {'number': 31, 'state': 'closed', 'merged_at': '2026-10-11T12:00:00Z',
-                   'merge_commit_sha': MAIN, 'head': {'sha': HEAD}, 'base': {'ref': 'main', 'sha': 'c' * 40, 'repo': {'full_name': 'bijux/bijux-iac'}},
+                   'merge_commit_sha': MAIN, 'head': {'sha': HEAD}, 'base': {'ref': 'main', 'sha': 'c' * 40, 'repo': {'full_name': 'bijux/bijux-canon'}},
                    'user': {'login': 'bijux'}}
         self.policy = merged_workflow_execution(self.inventory, self.repository)
         self.runs = [{'id': number, 'head_sha': HEAD, 'name': context,
@@ -29,7 +29,7 @@ class AcceptedVerificationTests(unittest.TestCase):
                      for number, context in enumerate(self.contexts, 1)]
 
     def evidence(self, *, main=None, prs=None, policy=None, runs=None, current=None):
-        manifest = {'repositories': [{'name': 'bijux-iac', 'workflow_execution_policy':
+        manifest = {'repositories': [{'name': 'bijux-canon', 'workflow_execution_policy':
                                       self.policy if policy is None else policy}]}
         encoded = base64.b64encode(json.dumps(manifest).encode()).decode()
         with patch.object(checks, 'gh_api_json', side_effect=[self.main if main is None else main,
@@ -41,7 +41,7 @@ class AcceptedVerificationTests(unittest.TestCase):
     def test_current_normal_merge_uses_only_its_verified_pr_head(self):
         receipt, observed = self.evidence()
         self.assertEqual(receipt['status'], 'producers-verified')
-        observed.assert_called_once_with('bijux-iac', HEAD)
+        observed.assert_called_once_with('bijux-canon', HEAD)
         row = receipt['repositories'][0]
         self.assertEqual(row['verification_source'], 'accepted-pull-request')
         self.assertEqual(row['accepted_pr']['merge_commit'], MAIN)

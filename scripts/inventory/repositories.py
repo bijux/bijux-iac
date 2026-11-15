@@ -21,6 +21,7 @@ FAMILY_REPOSITORIES = {
     "bijux-pollenomics": ("python", "python", "published", "published"),
     "bijux-proteomics": ("python", "python", "published", "published"),
     "bijux-phylogenetics": ("python", "python", "published", "published"),
+    "bijux-ontology": ("python", "python", "not-applicable", "planned"),
     "bijux-ro-crate-node": ("node", "node", "not-applicable", "planned"),
 }
 

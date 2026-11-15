@@ -51,7 +51,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 patch.object(application, "apply_settings") as settings_write, \
                 patch.object(application, "terraform") as terraform:
             receipt = application.verify_credential()
-        self.assertEqual(len(receipt["credential_access"]), 13)
+        self.assertEqual(len(receipt["credential_access"]), 12)
         self.assertEqual(receipt["status"], "credential-verified")
         self.assertIs(receipt["remote_writes"], False)
         settings_write.assert_not_called()
@@ -71,7 +71,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 patch.object(application, "write_receipt"):
             with self.assertRaisesRegex(ValueError, "administration visibility"):
                 application.verify_credential()
-        self.assertEqual(api.call_count, 13)
+        self.assertEqual(api.call_count, 12)
 
     def test_workflow_defaults_to_preflight_and_requires_explicit_application(self):
         workflow = (ROOT / ".github/workflows/github-governance-apply.yml").read_text()
@@ -136,7 +136,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
         import json
         from unittest.mock import patch
         from scripts.execution import application
-        inventory = {"repositories": [{"name": "bijux-iac"}]}
+        inventory = {"repositories": [{"name": "bijux-canon"}]}
         with patch.object(application, "validated_inventory", return_value=inventory), \
                 patch.object(application, "require_governance_main"), \
                 patch.object(application, "require_producers", return_value=[]), \
@@ -145,7 +145,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 patch.object(application, "git_head", return_value="accepted"), \
                 patch.object(application, "input_digests", return_value={}), \
                 patch.object(application, "settings_plan", return_value={}), \
-                patch.object(application, "ruleset_snapshot", return_value={"bijux-iac": None}), \
+                patch.object(application, "ruleset_snapshot", return_value={"bijux-canon": None}), \
                 patch.object(application, "write_receipt"), \
                 patch.object(application, "terraform", return_value="{}") as terraform, \
                 patch.object(application, "require_representable_rulesets", side_effect=ValueError("cannot preserve API protections")), \
@@ -212,6 +212,8 @@ class ApplicationBoundaryTests(unittest.TestCase):
         inventory = load_inventory()
         responses = []
         for repository in inventory["repositories"]:
+            if repository["name"] in {"bijux-iac", "bijux-std"}:
+                continue
             responses.append({**merged_repository_settings(inventory, repository),
                               "full_name": "bijux/" + repository["name"], "default_branch": "main"})
         responses[-1] = {"message": "denied"}
@@ -230,8 +232,8 @@ class ApplicationBoundaryTests(unittest.TestCase):
             return {"full_name": "bijux/" + name, "default_branch": "main", "visibility": "public"}
         with patch("scripts.execution.application.gh_api_json", side_effect=response):
             plan = settings_plan(inventory, require_complete=False)
-            self.assertIn("allow_merge_commit", plan["bijux-iac"]["unavailable_to_reader"])
-            self.assertNotIn("allow_merge_commit", plan["bijux-iac"]["before"])
+            self.assertIn("allow_merge_commit", plan["bijux-canon"]["unavailable_to_reader"])
+            self.assertNotIn("allow_merge_commit", plan["bijux-canon"]["before"])
             with self.assertRaises(ValueError):
                 settings_plan(inventory)
 
@@ -240,7 +242,7 @@ class ApplicationBoundaryTests(unittest.TestCase):
         from unittest.mock import patch
         from scripts.execution.application import apply
         settings = {repository["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
-                    for repository in load_inventory()["repositories"]}
+                    for repository in load_inventory()["repositories"] if repository["name"] not in {"bijux-iac", "bijux-std"}}
         receipt = {"settings": settings, "ruleset_before_images": {}, "completed": []}
         with patch("scripts.execution.application.require_governance_main"), patch("scripts.execution.application.verify_receipt"), \
                 patch("scripts.execution.application.settings_plan", return_value=settings), \
@@ -252,10 +254,10 @@ class ApplicationBoundaryTests(unittest.TestCase):
                 apply(receipt)
         live_audit.assert_called_once()
         self.assertEqual(receipt["status"], "failed")
-        self.assertIn("settings:bijux-iac", receipt["completed"])
+        self.assertIn("settings:bijux-canon", receipt["completed"])
         self.assertIn("ruleset:bijux-pollenomics", receipt["outstanding"])
         self.assertIn("audit:family", receipt["outstanding"])
-        self.assertIn("ruleset:bijux-iac", receipt["completed"])
+        self.assertIn("ruleset:bijux-canon", receipt["completed"])
 
     def test_ruleset_drift_refuses_before_any_settings_or_terraform_write(self):
         from unittest.mock import patch
@@ -276,21 +278,21 @@ class ApplicationBoundaryTests(unittest.TestCase):
         from scripts.execution import application
         inventory = load_inventory()
         settings = {r["name"]: {"before": {"has_wiki": False}, "after": {"has_wiki": True}}
-                    for r in inventory["repositories"]}
+                    for r in inventory["repositories"] if r["name"] not in {"bijux-iac", "bijux-std"}}
         receipt = {"settings": settings, "ruleset_before_images": {}, "completed": []}
         with patch.object(application, "require_governance_main"), patch.object(application, "verify_receipt"), \
                 patch.object(application, "settings_plan", return_value=settings), \
                 patch.object(application, "require_ruleset_snapshot", side_effect=[None, ValueError("live rulesets changed")]) as read, \
                 patch.object(application, "write_receipt"), patch.object(application, "apply_settings"), \
                 patch.object(application, "terraform") as terraform, \
-                patch.object(application, "audit", return_value=["bijux-iac: concurrent ruleset edit"]):
+                patch.object(application, "audit", return_value=["bijux-canon: concurrent ruleset edit"]):
             with self.assertRaisesRegex(ValueError, "live rulesets changed"):
                 application.apply(receipt)
         self.assertEqual(read.call_count, 2)
         terraform.assert_not_called()
         self.assertEqual(receipt["status"], "failed")
-        self.assertIn("settings:bijux-iac", receipt["completed"])
-        self.assertIn("ruleset:bijux-iac", receipt["outstanding"])
+        self.assertIn("settings:bijux-canon", receipt["completed"])
+        self.assertIn("ruleset:bijux-canon", receipt["outstanding"])
         self.assertIn("audit:family", receipt["outstanding"])
 
     def test_standalone_settings_reject_arbitrary_scope_before_patch(self):
@@ -313,7 +315,7 @@ class AuthorityPreparationAdmissionTests(unittest.TestCase):
                 patch.object(application, 'require_accepted_main') as admitted, \
                 patch.object(application, 'apply_settings') as writes, \
                 patch.object(application, 'terraform') as terraform:
-            with self.assertRaisesRegex(ValueError, 'preparing authorities: bijux-iac, bijux-std'):
+            with self.assertRaisesRegex(ValueError, 'GitLab-owned mirrors: bijux-iac, bijux-std'):
                 application.require_governance_main()
         admitted.assert_not_called()
         writes.assert_not_called()

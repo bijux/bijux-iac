@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 from scripts.github import rulesets
 
-INVENTORY = {"repositories": [{"name": "bijux-iac"}]}
+INVENTORY = {"repositories": [{"name": "bijux-canon"}]}
 DETAIL = {"id": 123, "name": "main-branch-protection", "target": "branch", "enforcement": "active",
-          "source_type": "Repository", "source": "bijux/bijux-iac",
+          "source_type": "Repository", "source": "bijux/bijux-canon",
           "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
           "rules": [{"type": "required_signatures"}], "bypass_actors": [], "unrelated_metadata": "retained"}
 
@@ -22,13 +22,13 @@ class RulesetBeforeImageTests(unittest.TestCase):
             return rulesets.ruleset_snapshot(INVENTORY)
 
     def test_complete_before_image_retains_unrelated_fields(self):
-        self.assertEqual(self.capture(), {"bijux-iac": DETAIL})
+        self.assertEqual(self.capture(), {"bijux-canon": DETAIL})
 
     def test_verified_absence_is_bound_and_later_creation_refuses(self):
-        self.assertEqual(self.capture(discovery=[]), {"bijux-iac": None})
+        self.assertEqual(self.capture(discovery=[]), {"bijux-canon": None})
         with patch.object(rulesets, "ruleset_snapshot", return_value=self.capture()):
             with self.assertRaisesRegex(ValueError, "changed after planning"):
-                rulesets.require_ruleset_snapshot(INVENTORY, {"bijux-iac": None})
+                rulesets.require_ruleset_snapshot(INVENTORY, {"bijux-canon": None})
 
     def test_failed_discovery_never_becomes_verified_absence(self):
         with patch.object(rulesets, "list_rulesets", side_effect=ValueError("denied")), \
@@ -55,8 +55,8 @@ class RulesetBeforeImageTests(unittest.TestCase):
     def test_every_retry_rereads_and_refuses_unrelated_live_drift(self):
         changed = copy.deepcopy(DETAIL)
         changed["unrelated_metadata"] = "concurrent change"
-        with patch.object(rulesets, "ruleset_snapshot", side_effect=[{"bijux-iac": DETAIL}, {"bijux-iac": changed}]) as read:
-            rulesets.require_ruleset_snapshot(INVENTORY, {"bijux-iac": DETAIL})
+        with patch.object(rulesets, "ruleset_snapshot", side_effect=[{"bijux-canon": DETAIL}, {"bijux-canon": changed}]) as read:
+            rulesets.require_ruleset_snapshot(INVENTORY, {"bijux-canon": DETAIL})
             with self.assertRaisesRegex(ValueError, "changed after planning"):
-                rulesets.require_ruleset_snapshot(INVENTORY, {"bijux-iac": DETAIL})
+                rulesets.require_ruleset_snapshot(INVENTORY, {"bijux-canon": DETAIL})
             self.assertEqual(read.call_count, 2)

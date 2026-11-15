@@ -9,6 +9,7 @@ import subprocess
 from scripts.github.api import gh_api_json
 from scripts.github.audit import STATUS_APP_ID
 from scripts.inventory.repositories import ROOT, validated_inventory
+from scripts.inventory.roles import github_development_inventory
 from scripts.inventory.workflows import merged_workflow_execution
 
 PR_ONLY_CHECKS = {"policy / pr approval"}
@@ -85,7 +86,7 @@ def verify_remote_execution(repository: str, commit: str, expected: dict) -> Non
 
 def producer_evidence(inventory: dict) -> dict:
     receipt = {"remote_writes": False, "repositories": [], "errors": []}
-    for repository in inventory["repositories"]:
+    for repository in github_development_inventory(inventory)["repositories"]:
         name = repository["name"]
         observation = {"repository": name, "checks": [], "errors": []}
         receipt["repositories"].append(observation)
@@ -145,4 +146,4 @@ def require_producers(inventory: dict) -> dict:
 if __name__ == "__main__":
     inventory = validated_inventory()
     require_producers(inventory)
-    print(f"accepted check producers: OK ({len(inventory['repositories'])} repositories)")
+    print(f"accepted check producers: OK ({len(github_development_inventory(inventory)['repositories'])} GitHub development repositories)")
